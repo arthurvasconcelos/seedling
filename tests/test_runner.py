@@ -201,6 +201,34 @@ async def test_run_sequential_dependent_seeders(engine, session_factory):
     assert order == ["A", "B"]
 
 
+# ── discover ────────────────────────────────────────────────────────────────────
+
+
+def test_discover_registers_subclasses(session_factory):
+    runner = SeederRunner(session_factory, env=DEV)
+    runner.discover("tests.fixture_seeders")
+    names = {cls.__name__ for cls in runner._registry}
+    assert "DiscoverableUserSeeder" in names
+    assert "DiscoverablePostSeeder" in names
+
+
+def test_discover_respects_dependencies(session_factory):
+    runner = SeederRunner(session_factory, env=DEV)
+    runner.discover("tests.fixture_seeders")
+    ordered = runner.list_seeders()
+    names = [cls.__name__ for cls in ordered]
+    assert names.index("DiscoverableUserSeeder") < names.index("DiscoverablePostSeeder")
+
+
+def test_discover_deduplicates_on_repeated_calls(session_factory):
+    runner = SeederRunner(session_factory, env=DEV)
+    runner.discover("tests.fixture_seeders")
+    runner.discover("tests.fixture_seeders")
+    names = [cls.__name__ for cls in runner._registry]
+    assert names.count("DiscoverableUserSeeder") == 1
+    assert names.count("DiscoverablePostSeeder") == 1
+
+
 async def test_fresh_truncates_then_reseeds(engine, session_factory):
     # First run
     runner = SeederRunner(session_factory, env=DEV)

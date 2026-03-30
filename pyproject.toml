@@ -22,15 +22,23 @@ dependencies = [
 [project.scripts]
 seed = "seedling.cli:app"
 
+[project.entry-points."pytest11"]
+seedling = "seedling.pytest_plugin"
+
 [dependency-groups]
 dev = [
     "aiosqlite>=0.20",
     "black>=24",
     "isort>=5",
     "mypy>=1.5",
+    "pre-commit>=4.5",
     "pytest>=8",
     "pytest-asyncio>=0.23",
     "ruff>=0.1",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
 ]
 
 [tool.black]

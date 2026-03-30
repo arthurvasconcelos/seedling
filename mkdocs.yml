@@ -1,0 +1,43 @@
+site_name: seedling
+site_description: Async-native seeder and factory library for SQLAlchemy
+site_url: https://arthurvasconcelos.github.io/seedling
+repo_url: https://github.com/arthurvasconcelos/seedling
+repo_name: arthurvasconcelos/seedling
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: green
+      accent: light green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: green
+      accent: light green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Getting Started: index.md
+  - Seeders: seeders.md
+  - Factories: factories.md
+  - Runner: runner.md
+  - CLI Reference: cli.md
+  - Configuration: configuration.md

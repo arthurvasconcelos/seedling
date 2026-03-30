@@ -1,11 +1,23 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
+import pkgutil
+from typing import Any
 
+from sqlalchemy import inspect as sa_inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from seedling.resolver import resolve_with_deps, topological_levels, topological_sort
 from seedling.seeder import Seeder
+
+
+def _all_subclasses(cls: type) -> set[type]:
+    result: set[type] = set()
+    for sub in cls.__subclasses__():
+        result.add(sub)
+        result.update(_all_subclasses(sub))
+    return result
 
 
 class SeederRunner:
@@ -20,6 +32,16 @@ class SeederRunner:
 
     def register(self, *seeder_classes: type[Seeder]) -> None:
         for cls in seeder_classes:
+            if cls not in self._registry:
+                self._registry.append(cls)
+
+    def discover(self, package: str) -> None:
+        """Import all modules under *package* and register any Seeder subclasses found."""
+        pkg = importlib.import_module(package)
+        prefix = pkg.__name__ + "."
+        for _, name, _ in pkgutil.walk_packages(pkg.__path__, prefix):
+            importlib.import_module(name)
+        for cls in _all_subclasses(Seeder):
             if cls not in self._registry:
                 self._registry.append(cls)
 
@@ -72,3 +94,29 @@ class SeederRunner:
             await asyncio.gather(*[self._truncate_one(cls) for cls in level])
         for level in levels:
             await asyncio.gather(*[self._run_one(cls) for cls in level])
+
+    async def export(self, *seeder_classes: type[Seeder]) -> dict[str, list[dict[str, Any]]]:
+        """Query all rows for models declared on registered seeders.
+
+        Returns a dict keyed by table name. Only seeders that declare
+        ``models = [...]`` contribute to the export.
+        """
+        candidates = list(seeder_classes) if seeder_classes else self._registry
+        seen: set[Any] = set()
+        ordered_models: list[Any] = []
+        for seeder_cls in candidates:
+            for model in seeder_cls.models:
+                if model not in seen:
+                    ordered_models.append(model)
+                    seen.add(model)
+
+        result: dict[str, list[dict[str, Any]]] = {}
+        async with self._session_factory() as session:
+            for model in ordered_models:
+                mapper = sa_inspect(model)
+                col_keys = [c.key for c in mapper.mapper.column_attrs]
+                rows = (await session.execute(select(model))).scalars().all()
+                result[model.__tablename__] = [
+                    {key: getattr(row, key) for key in col_keys} for row in rows
+                ]
+        return result

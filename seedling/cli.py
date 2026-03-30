@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+import decimal
 import importlib
+import json
 import tomllib
-from typing import Annotated
+import uuid
+from datetime import date, datetime
+from pathlib import Path
+from typing import Annotated, Any
 
 import typer
 
+from seedling.environments import PROD
 from seedling.runner import SeederRunner
 
 app = typer.Typer(no_args_is_help=True)
@@ -59,6 +65,8 @@ def run_cmd(
 ) -> None:
     """Run seeders in dependency order."""
     runner = _get_runner(env)
+    if env == PROD:
+        typer.confirm("Running against production. Continue?", abort=True)
     seeder_classes = _resolve_seeders(runner, seeders)
     asyncio.run(runner.run(*seeder_classes))
     print("Done.")
@@ -71,9 +79,46 @@ def fresh_cmd(
 ) -> None:
     """Truncate affected tables then run seeders."""
     runner = _get_runner(env)
+    if env == PROD:
+        typer.confirm("Running against production. Continue?", abort=True)
     seeder_classes = _resolve_seeders(runner, seeders)
     asyncio.run(runner.fresh(*seeder_classes))
     print("Done.")
+
+
+class _JsonEncoder(json.JSONEncoder):
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        if isinstance(obj, decimal.Decimal):
+            return str(obj)
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        return super().default(obj)
+
+
+@app.command("export")
+def export_cmd(
+    seeders: Annotated[list[str] | None, typer.Argument()] = None,
+    env: Annotated[str, typer.Option("--env", help="Environment to seed")] = "development",
+    output: Annotated[Path, typer.Option("--output", "-o", help="Output file")] = Path(
+        "fixtures.json"
+    ),
+) -> None:
+    """Export seeded rows to a JSON fixture file."""
+    runner = _get_runner(env)
+    seeder_classes = _resolve_seeders(runner, seeders)
+    data = asyncio.run(runner.export(*seeder_classes))
+    if not data:
+        typer.echo(
+            "No models declared on any registered seeder. "
+            "Add `models = [MyModel]` to your Seeder classes.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    output.write_text(json.dumps(data, cls=_JsonEncoder, indent=2))
+    total = sum(len(rows) for rows in data.values())
+    print(f"Exported {total} rows across {len(data)} table(s) to {output}")
 
 
 @app.command("list")

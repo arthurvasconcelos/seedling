@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,10 @@ class Seeder:
 
     # Runner skips this seeder if the current env is not in this set.
     environments: ClassVar[set[str]] = DEV_AND_TEST
+
+    # SQLAlchemy ORM model classes seeded by this seeder.
+    # Declared here to support `seed export`.
+    models: ClassVar[list[Any]] = []
 
     async def run(self, session: AsyncSession) -> None:
         raise NotImplementedError
