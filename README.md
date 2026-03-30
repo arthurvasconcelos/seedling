@@ -1,10 +1,10 @@
-# seedling
+# sqlalchemy-seedling
 
 Async-native seeder and factory library for SQLAlchemy.
 Dependency-aware runners, declarative factories, and a CLI — Laravel-style ergonomics for the Python async ecosystem.
 
-[![PyPI version](https://img.shields.io/pypi/v/seedling)](https://pypi.org/project/seedling/)
-[![Python versions](https://img.shields.io/pypi/pyversions/seedling)](https://pypi.org/project/seedling/)
+[![PyPI version](https://img.shields.io/pypi/v/sqlalchemy-seedling)](https://pypi.org/project/sqlalchemy-seedling/)
+[![Python versions](https://img.shields.io/pypi/pyversions/sqlalchemy-seedling)](https://pypi.org/project/sqlalchemy-seedling/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/arthurvasconcelos/seedling/actions/workflows/ci.yml/badge.svg)](https://github.com/arthurvasconcelos/seedling/actions)
 
@@ -23,9 +23,9 @@ Dependency-aware runners, declarative factories, and a CLI — Laravel-style erg
 ## Installation
 
 ```bash
-pip install seedling
+pip install sqlalchemy-seedling
 # or
-uv add seedling
+uv add sqlalchemy-seedling
 ```
 
 Requires Python 3.11+ and SQLAlchemy 2.0+.

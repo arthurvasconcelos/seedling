@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 include = ["seedling*"]
 
 [project]
-name = "seedling"
+name = "sqlalchemy-seedling"
 version = "0.1.0"
 description = "Async-native seeder and factory library for SQLAlchemy"
 readme = "README.md"

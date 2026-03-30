@@ -1,13 +1,13 @@
-# seedling
+# sqlalchemy-seedling
 
 Async-native seeder and factory library for SQLAlchemy.
 
 ## Installation
 
 ```bash
-pip install seedling
+pip install sqlalchemy-seedling
 # or with uv
-uv add seedling
+uv add sqlalchemy-seedling
 ```
 
 ## 5-minute quickstart

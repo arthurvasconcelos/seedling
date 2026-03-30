@@ -1,4 +1,4 @@
-site_name: seedling
+site_name: sqlalchemy-seedling
 site_description: Async-native seeder and factory library for SQLAlchemy
 site_url: https://arthurvasconcelos.github.io/seedling
 repo_url: https://github.com/arthurvasconcelos/seedling
