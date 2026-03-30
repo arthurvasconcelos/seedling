@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["seedling*"]
+
+[project]
+name = "seedling"
+version = "0.1.0"
+description = "Async-native seeder and factory library for SQLAlchemy"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["sqlalchemy", "async", "seeder", "factory", "testing"]
+dependencies = [
+    "sqlalchemy[asyncio]>=2.0",
+    "typer>=0.12",
+    "faker>=20",
+]
+
+[project.scripts]
+seed = "seedling.cli:app"
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.20",
+    "black>=24",
+    "isort>=5",
+    "mypy>=1.5",
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.1",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "C", "B", "UP"]
+ignore = ["E501", "B008", "C901"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_optional = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = ["faker.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
