@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -131,6 +133,72 @@ async def test_run_subset_only_runs_requested(engine, session_factory):
 
 
 # ── fresh ───────────────────────────────────────────────────────────────────────
+
+
+# ── parallel execution ──────────────────────────────────────────────────────────
+
+
+async def test_run_parallel_independent_seeders(engine, session_factory):
+    """Seeders with no deps between them should run concurrently (same level)."""
+    order: list[str] = []
+
+    class ParallelA(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            await asyncio.sleep(0)  # yield to event loop
+            order.append("A")
+            session.add(Item(name="pa", value=0))
+            await session.commit()
+
+    class ParallelB(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            await asyncio.sleep(0)
+            order.append("B")
+            session.add(Item(name="pb", value=0))
+            await session.commit()
+
+    runner = SeederRunner(session_factory, env=DEV)
+    runner.register(ParallelA, ParallelB)
+    await runner.run()
+
+    async with session_factory() as s:
+        rows = (await s.execute(select(Item))).scalars().all()
+    names = {r.name for r in rows}
+    assert "pa" in names
+    assert "pb" in names
+    # Both ran (order doesn't matter for parallel seeders)
+    assert set(order) == {"A", "B"}
+
+
+async def test_run_sequential_dependent_seeders(engine, session_factory):
+    """Seeders with a dependency chain must run in strict order."""
+    order: list[str] = []
+
+    class SeqA(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            order.append("A")
+            session.add(Item(name="sa", value=0))
+            await session.commit()
+
+    class SeqB(Seeder):
+        depends_on = [SeqA]
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            order.append("B")
+            session.add(Item(name="sb", value=0))
+            await session.commit()
+
+    runner = SeederRunner(session_factory, env=DEV)
+    runner.register(SeqA, SeqB)
+    await runner.run()
+
+    assert order == ["A", "B"]
 
 
 async def test_fresh_truncates_then_reseeds(engine, session_factory):

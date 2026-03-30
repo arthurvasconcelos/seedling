@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from seedling.exceptions import CircularDependencyError, MissingDependencyError
-from seedling.resolver import resolve_with_deps, topological_sort
+from seedling.resolver import resolve_with_deps, topological_levels, topological_sort
 from seedling.seeder import Seeder
 
 
@@ -112,6 +112,46 @@ def test_resolve_with_deps_no_deps():
     registry = [SeedA, SeedB]
     result = resolve_with_deps([SeedA], registry)
     assert result == [SeedA]
+
+
+# ── topological_levels ─────────────────────────────────────────────────────────
+
+
+def test_topological_levels_no_deps():
+    levels = topological_levels([SeedA])
+    assert levels == [[SeedA]]
+
+
+def test_topological_levels_linear_chain():
+    # A → B → C must produce three separate levels
+    levels = topological_levels([SeedA, SeedB, SeedC])
+    assert len(levels) == 3
+    assert SeedA in levels[0]
+    assert SeedB in levels[1]
+    assert SeedC in levels[2]
+
+
+def test_topological_levels_diamond_parallel():
+    # A → B and A → D: B and D should be in the same level
+    levels = topological_levels([SeedA, SeedB, SeedD])
+    assert SeedA in levels[0]
+    assert set(levels[1]) == {SeedB, SeedD}
+
+
+def test_topological_levels_flattens_to_sort():
+    flat = [s for level in topological_levels([SeedA, SeedB, SeedC]) for s in level]
+    assert flat == topological_sort([SeedA, SeedB, SeedC])
+
+
+def test_topological_levels_missing_dependency_raises():
+    class Orphan(Seeder):
+        depends_on = [SeedA]
+
+        async def run(self, session: AsyncSession) -> None:
+            pass
+
+    with pytest.raises(MissingDependencyError):
+        topological_levels([Orphan])
 
 
 def test_missing_dependency_error_message():

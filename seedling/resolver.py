@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from collections import deque
-
 from seedling.exceptions import CircularDependencyError, MissingDependencyError
 from seedling.seeder import Seeder
 
 
-def topological_sort(seeders: list[type[Seeder]]) -> list[type[Seeder]]:
+def topological_levels(seeders: list[type[Seeder]]) -> list[list[type[Seeder]]]:
+    """Group seeders by dependency level.
+
+    Seeders within the same level have no dependencies on each other and can
+    run in parallel. Levels must be executed in order.
+    """
     in_degree: dict[type[Seeder], int] = dict.fromkeys(seeders, 0)
     dependents: dict[type[Seeder], list[type[Seeder]]] = {s: [] for s in seeders}
 
@@ -17,22 +20,30 @@ def topological_sort(seeders: list[type[Seeder]]) -> list[type[Seeder]]:
             in_degree[seeder] += 1
             dependents[dep].append(seeder)
 
-    queue = deque(s for s, deg in in_degree.items() if deg == 0)
-    result: list[type[Seeder]] = []
+    frontier = [s for s, deg in in_degree.items() if deg == 0]
+    levels: list[list[type[Seeder]]] = []
 
-    while queue:
-        node = queue.popleft()
-        result.append(node)
-        for dependent in dependents[node]:
-            in_degree[dependent] -= 1
-            if in_degree[dependent] == 0:
-                queue.append(dependent)
+    while frontier:
+        levels.append(frontier)
+        next_frontier: list[type[Seeder]] = []
+        for node in frontier:
+            for dependent in dependents[node]:
+                in_degree[dependent] -= 1
+                if in_degree[dependent] == 0:
+                    next_frontier.append(dependent)
+        frontier = next_frontier
 
-    if len(result) != len(seeders):
-        cycle = [s.__name__ for s in seeders if s not in result]
+    total = sum(len(level) for level in levels)
+    if total != len(seeders):
+        seen = {s for level in levels for s in level}
+        cycle = [s.__name__ for s in seeders if s not in seen]
         raise CircularDependencyError(cycle)
 
-    return result
+    return levels
+
+
+def topological_sort(seeders: list[type[Seeder]]) -> list[type[Seeder]]:
+    return [s for level in topological_levels(seeders) for s in level]
 
 
 def resolve_with_deps(
