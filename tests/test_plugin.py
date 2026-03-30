@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from seedling.environments import TEST
 from seedling.runner import SeederRunner
 

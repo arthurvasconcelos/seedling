@@ -15,6 +15,7 @@ Then in tests::
         await seedling_runner.run(UserSeeder)
         ...
 """
+
 from __future__ import annotations
 
 import pytest
@@ -24,7 +25,7 @@ from seedling.runner import SeederRunner
 
 
 @pytest.fixture
-def seedling_session_factory():  # type: ignore[return]
+def seedling_session_factory() -> None:
     """Override this fixture to supply your async_sessionmaker."""
     raise NotImplementedError(
         "Override the 'seedling_session_factory' fixture in your conftest.py "

@@ -5,7 +5,8 @@ import importlib
 import pkgutil
 from typing import Any
 
-from sqlalchemy import inspect as sa_inspect, select
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from seedling.resolver import resolve_with_deps, topological_levels, topological_sort
@@ -95,7 +96,9 @@ class SeederRunner:
         for level in levels:
             await asyncio.gather(*[self._run_one(cls) for cls in level])
 
-    async def export(self, *seeder_classes: type[Seeder]) -> dict[str, list[dict[str, Any]]]:
+    async def export(
+        self, *seeder_classes: type[Seeder]
+    ) -> dict[str, list[dict[str, Any]]]:
         """Query all rows for models declared on registered seeders.
 
         Returns a dict keyed by table name. Only seeders that declare

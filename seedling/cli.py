@@ -23,14 +23,16 @@ def _get_runner(env: str) -> SeederRunner:
         with open("pyproject.toml", "rb") as f:
             config = tomllib.load(f).get("tool", {}).get("seedling", {})
     except FileNotFoundError:
-        typer.echo("Error: no pyproject.toml found. Run from your project root.", err=True)
+        typer.echo(
+            "Error: no pyproject.toml found. Run from your project root.", err=True
+        )
         raise typer.Exit(1) from None
 
     runner_path = config.get("runner")
     if not runner_path:
         typer.echo(
             "Error: [tool.seedling] runner is not configured in pyproject.toml.\n"
-            "Add: runner = \"myapp.seeders:create_runner\"",
+            'Add: runner = "myapp.seeders:create_runner"',
             err=True,
         )
         raise typer.Exit(1)
@@ -61,7 +63,9 @@ def _resolve_seeders(runner: SeederRunner, names: list[str] | None):
 @app.command("run")
 def run_cmd(
     seeders: Annotated[list[str] | None, typer.Argument()] = None,
-    env: Annotated[str, typer.Option("--env", help="Environment to seed")] = "development",
+    env: Annotated[
+        str, typer.Option("--env", help="Environment to seed")
+    ] = "development",
 ) -> None:
     """Run seeders in dependency order."""
     runner = _get_runner(env)
@@ -75,7 +79,9 @@ def run_cmd(
 @app.command("fresh")
 def fresh_cmd(
     seeders: Annotated[list[str] | None, typer.Argument()] = None,
-    env: Annotated[str, typer.Option("--env", help="Environment to seed")] = "development",
+    env: Annotated[
+        str, typer.Option("--env", help="Environment to seed")
+    ] = "development",
 ) -> None:
     """Truncate affected tables then run seeders."""
     runner = _get_runner(env)
@@ -88,7 +94,7 @@ def fresh_cmd(
 
 class _JsonEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
-        if isinstance(obj, (datetime, date)):
+        if isinstance(obj, datetime | date):
             return obj.isoformat()
         if isinstance(obj, decimal.Decimal):
             return str(obj)
@@ -100,7 +106,9 @@ class _JsonEncoder(json.JSONEncoder):
 @app.command("export")
 def export_cmd(
     seeders: Annotated[list[str] | None, typer.Argument()] = None,
-    env: Annotated[str, typer.Option("--env", help="Environment to seed")] = "development",
+    env: Annotated[
+        str, typer.Option("--env", help="Environment to seed")
+    ] = "development",
     output: Annotated[Path, typer.Option("--output", "-o", help="Output file")] = Path(
         "fixtures.json"
     ),
@@ -124,7 +132,9 @@ def export_cmd(
 @app.command("list")
 def list_cmd(
     seeders: Annotated[list[str] | None, typer.Argument()] = None,
-    env: Annotated[str, typer.Option("--env", help="Environment to filter by")] = "development",
+    env: Annotated[
+        str, typer.Option("--env", help="Environment to filter by")
+    ] = "development",
 ) -> None:
     """Print resolved execution order without running anything."""
     runner = _get_runner(env)

@@ -51,7 +51,7 @@ class Factory(Generic[T]):
                     continue
                 if name in _RESERVED:
                     continue
-                if isinstance(value, (classmethod, staticmethod)):
+                if isinstance(value, classmethod | staticmethod):
                     continue
                 if inspect.isfunction(value):
                     continue
@@ -72,7 +72,7 @@ class Factory(Generic[T]):
         for name, descriptor in fields.items():
             if name in overrides or isinstance(descriptor, SubFactory):
                 continue
-            if not isinstance(descriptor, (LazyAttribute, Sequence)):
+            if not isinstance(descriptor, LazyAttribute | Sequence):
                 built[name] = descriptor
 
         for name, descriptor in fields.items():
@@ -104,7 +104,7 @@ class Factory(Generic[T]):
         for name, descriptor in fields.items():
             if name in overrides:
                 continue
-            if not isinstance(descriptor, (LazyAttribute, Sequence, SubFactory)):
+            if not isinstance(descriptor, LazyAttribute | Sequence | SubFactory):
                 built[name] = descriptor
 
         # 2. SubFactories (async — each may insert a row)

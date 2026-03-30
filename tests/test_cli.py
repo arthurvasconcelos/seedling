@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import tomllib
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from typer.testing import CliRunner
 
 from seedling.cli import app
@@ -14,7 +12,9 @@ runner = CliRunner()
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
-def _make_pyproject(tmp_path: Path, runner_path: str = "myapp.seeders:create_runner") -> Path:
+def _make_pyproject(
+    tmp_path: Path, runner_path: str = "myapp.seeders:create_runner"
+) -> Path:
     """Write a minimal pyproject.toml with [tool.seedling] into tmp_path."""
     content = f'[tool.seedling]\nrunner = "{runner_path}"\n'
     p = tmp_path / "pyproject.toml"
@@ -149,7 +149,9 @@ def test_export_writes_fixture_file(tmp_path, monkeypatch):
 
     with patch("seedling.cli._get_runner", return_value=mock_seeder_runner):
         with patch("asyncio.run", return_value=fake_data):
-            result = runner.invoke(app, ["export", "--output", str(tmp_path / "out.json")])
+            result = runner.invoke(
+                app, ["export", "--output", str(tmp_path / "out.json")]
+            )
 
     assert result.exit_code == 0
     assert "Exported" in result.output
