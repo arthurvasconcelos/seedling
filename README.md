@@ -162,6 +162,21 @@ from seedling import DEV, TEST, PROD, ALL, DEV_AND_TEST
 
 ---
 
+## On the horizon
+
+- **State tracking** — `seedling_state` table records every run with timestamps,
+  status, and a content hash for drift detection. `seed status` and `--new-only`
+  flag coming in 0.3.
+- **Factory power** — `AutoFactory[Model]` with mapper introspection, declarative
+  `Trait` classes, `@post_generation` hooks, `RelatedFactory`, and bulk insert.
+  Coming in 0.4.
+- **Scaffolding** — `seed init`, `seed make:seeder`, `seed make:factory`, and a
+  transactional pytest fixture. Coming in 0.5.
+
+See [ROADMAP.md](ROADMAP.md) for the full plan.
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
