@@ -4,10 +4,10 @@
 
 Only the latest released minor version receives security fixes.
 
-| Version | Supported |
-|---------|-----------|
-| 0.2.x   | ✓ current |
-| 0.1.x   | ✗         |
+| Version | Supported      |
+|---------|----------------|
+| 0.2.x   | ✓ current      |
+| 0.1.x   | ✗              |
 
 Once 1.0 ships this table will follow semver: the latest patch of each
 supported minor line will receive fixes.
