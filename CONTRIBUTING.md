@@ -2,55 +2,70 @@
 
 ## Development setup
 
-Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
+Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), and
+[just](https://just.systems/).
 
 ```bash
 git clone https://github.com/arthurvasconcelos/seedling
 cd seedling
-uv sync
+just install
 ```
 
-### Git hooks
+`just install` installs all dependency groups **and** activates the pre-commit
+hooks (including the commit-message validator). Run it once after cloning; you
+should not need to run `uv run pre-commit install` manually.
 
-Install the pre-commit hooks once after cloning:
+## Common tasks
 
-```bash
-uv run pre-commit install
-uv run pre-commit install --hook-type commit-msg
-```
+| Command | What it does |
+|---|---|
+| `just fmt` | Format and auto-fix with ruff (run before committing) |
+| `just lint` | ruff check + mypy (read-only, no fixes) |
+| `just test` | pytest |
+| `just check` | lint then test — mirrors CI |
+| `just smoke` | Start the dev FastAPI smoke app |
+| `just docs` | Serve the docs site locally |
 
-The second command installs the commit message validator (see [Commit style](#commit-style) below).
-After that, hooks run automatically on every `git commit`.
+**Before every commit:** run `just fmt` to let ruff format the code. The
+pre-commit hook will also run `ruff-format` automatically on `git commit`, so
+any formatting drift is caught at the latest then — but catching it beforehand
+keeps the commit clean on the first try.
 
-To run all hooks manually against the whole codebase:
+## Formatting and linting
 
-```bash
-uv run pre-commit run --all-files
-```
+The project uses `ruff` for both linting and formatting. Two separate passes:
+
+- **`ruff check --fix`** — lint rules (import order, style, etc.)
+- **`ruff format`** — code formatting (black-compatible)
+
+`just fmt` runs both. `just lint` runs `ruff check` (read-only) followed by
+`mypy`. CI runs `pre-commit run --all-files` which applies both `ruff` and
+`ruff-format` to every file.
 
 ## Running tests
 
 ```bash
-uv run pytest
+just test                  # all tests
+just test -k upsert        # filter by name
+just test tests/test_cli.py  # single file
 ```
 
-## Linting and type checking
-
-```bash
-uv run ruff check seedling/ tests/
-uv run mypy seedling/
-```
+The dialect matrix tests (PostgreSQL + MariaDB) are skipped locally unless
+`SEEDLING_TEST_PG_URL` and `SEEDLING_TEST_MARIADB_URL` are set. CI spins up
+both database services and sets these variables automatically.
 
 ## Submitting changes
 
 1. Fork the repo and create a branch from `main`.
-2. Add tests for any new behaviour.
-3. Make sure `pytest`, `mypy`, and `pre-commit run --all-files` all pass.
+2. Add tests for any new behaviour — see the testing standard in the project
+   docs for coverage expectations.
+3. Run `just check` and confirm everything passes.
 4. Open a pull request with a clear description of the change.
 
 ## Commit style
 
-Commits follow [Conventional Commits](https://www.conventionalcommits.org/) and are validated by a `commit-msg` hook.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
+and are validated by a `commit-msg` hook (installed by `just install`).
 
 ### Format
 
@@ -108,4 +123,5 @@ BREAKING CHANGE: SeederRunner.run_all has been removed. Use run() instead.
 
 ## Reporting bugs
 
-Open a [GitHub issue](https://github.com/arthurvasconcelos/seedling/issues) using the **Bug report** template.
+Open a [GitHub issue](https://github.com/arthurvasconcelos/seedling/issues)
+using the **Bug report** template.

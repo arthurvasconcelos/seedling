@@ -1,8 +1,10 @@
 default: check
 
-# Install all dependency groups
+# Install all dependency groups and activate git hooks
 install:
     uv sync --all-groups
+    uv run pre-commit install
+    uv run pre-commit install --hook-type commit-msg
 
 # Format code with ruff
 fmt:
