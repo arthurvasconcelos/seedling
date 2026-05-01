@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar, cast
 
 from faker import Faker
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,7 +88,7 @@ class Factory(Generic[T]):
                 built[name] = descriptor.func(cls._next_sequence())
 
         built.update(overrides)
-        return cls.model(**built)  # type: ignore[no-any-return]
+        return cast(T, cls.model(**built))
 
     @classmethod
     def build_batch(cls, count: int, **overrides: Any) -> list[T]:
@@ -131,11 +131,11 @@ class Factory(Generic[T]):
         # 5. Overrides replace any computed value
         built.update(overrides)
 
-        instance = cls.model(**built)
+        instance: T = cast(T, cls.model(**built))
         session.add(instance)
         await session.flush()
         await session.refresh(instance)
-        return instance  # type: ignore[no-any-return]
+        return instance
 
     @classmethod
     async def create_batch(

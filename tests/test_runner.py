@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+import structlog.testing
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -243,3 +244,62 @@ async def test_fresh_truncates_then_reseeds(engine, session_factory):
     names = [r.name for r in rows]
     # Exactly one 'a' row (not duplicated)
     assert names.count("a") == 1
+
+
+# ── structlog events ────────────────────────────────────────────────────────────
+
+
+async def test_run_emits_run_and_seeder_events(engine, session_factory):
+    with structlog.testing.capture_logs() as logs:
+        runner = SeederRunner(session_factory, env=DEV)
+        runner.register(ItemSeederA)
+        await runner.run()
+
+    events = [log["event"] for log in logs]
+    assert "run.start" in events
+    assert "seeder.start" in events
+    assert "seeder.finish" in events
+    assert "run.finish" in events
+
+
+async def test_run_logs_include_run_id_and_env(engine, session_factory):
+    with structlog.testing.capture_logs() as logs:
+        runner = SeederRunner(session_factory, env=DEV)
+        runner.register(ItemSeederA)
+        await runner.run()
+
+    run_start = next(log for log in logs if log["event"] == "run.start")
+    assert "run_id" in run_start
+    assert run_start["env"] == DEV
+
+
+async def test_run_id_is_consistent_within_one_run(engine, session_factory):
+    with structlog.testing.capture_logs() as logs:
+        runner = SeederRunner(session_factory, env=DEV)
+        runner.register(ItemSeederA, ItemSeederB)
+        await runner.run()
+
+    run_ids = {log["run_id"] for log in logs if "run_id" in log}
+    assert len(run_ids) == 1
+
+
+async def test_fresh_emits_fresh_start_and_finish(engine, session_factory):
+    with structlog.testing.capture_logs() as logs:
+        runner = SeederRunner(session_factory, env=DEV)
+        runner.register(ItemSeederA)
+        await runner.run()
+        await runner.fresh()
+
+    events = [log["event"] for log in logs]
+    assert "fresh.start" in events
+    assert "fresh.finish" in events
+
+
+async def test_seeder_start_log_includes_seeder_name(engine, session_factory):
+    with structlog.testing.capture_logs() as logs:
+        runner = SeederRunner(session_factory, env=DEV)
+        runner.register(ItemSeederA)
+        await runner.run()
+
+    seeder_starts = [log for log in logs if log["event"] == "seeder.start"]
+    assert any(log["seeder"] == "ItemSeederA" for log in seeder_starts)

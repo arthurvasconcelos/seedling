@@ -3,14 +3,19 @@ from __future__ import annotations
 import asyncio
 import importlib
 import pkgutil
+import uuid
+from collections.abc import Callable
 from typing import Any
 
+import structlog
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from seedling.resolver import resolve_with_deps, topological_levels, topological_sort
 from seedling.seeder import Seeder
+
+_log = structlog.get_logger(__name__)
 
 
 def _all_subclasses(cls: type) -> set[type]:
@@ -73,28 +78,62 @@ class SeederRunner:
             if any(self._env in s.environments for s in level)
         ]
 
-    async def _run_one(self, seeder_cls: type[Seeder]) -> None:
-        print(f"Running {seeder_cls.__name__}...")
+    async def _run_one(
+        self,
+        seeder_cls: type[Seeder],
+        log: structlog.types.FilteringBoundLogger,
+        on_start: Callable[[str], None] | None = None,
+        on_finish: Callable[[str], None] | None = None,
+    ) -> None:
+        log.info("seeder.start", seeder=seeder_cls.__name__)
+        if on_start:
+            on_start(seeder_cls.__name__)
         async with self._session_factory() as session:
             await seeder_cls().run(session)
+        log.info("seeder.finish", seeder=seeder_cls.__name__)
+        if on_finish:
+            on_finish(seeder_cls.__name__)
 
     async def _truncate_one(self, seeder_cls: type[Seeder]) -> None:
         async with self._session_factory() as session:
             await seeder_cls().truncate(session)
             await session.commit()
 
-    async def run(self, *seeder_classes: type[Seeder]) -> None:
+    async def run(
+        self,
+        *seeder_classes: type[Seeder],
+        on_seeder_start: Callable[[str], None] | None = None,
+        on_seeder_finish: Callable[[str], None] | None = None,
+    ) -> None:
         """Run seeders level by level; seeders within a level run in parallel."""
-        for level in self._list_levels(*seeder_classes):
-            await asyncio.gather(*[self._run_one(cls) for cls in level])
-
-    async def fresh(self, *seeder_classes: type[Seeder]) -> None:
-        """Truncate affected tables in reverse level order, then run."""
+        run_id = str(uuid.uuid4())
+        log = _log.bind(run_id=run_id, env=self._env)
         levels = self._list_levels(*seeder_classes)
+        log.info("run.start", seeder_count=sum(len(level) for level in levels))
+        for level in levels:
+            await asyncio.gather(
+                *[self._run_one(cls, log, on_seeder_start, on_seeder_finish) for cls in level]
+            )
+        log.info("run.finish")
+
+    async def fresh(
+        self,
+        *seeder_classes: type[Seeder],
+        on_seeder_start: Callable[[str], None] | None = None,
+        on_seeder_finish: Callable[[str], None] | None = None,
+    ) -> None:
+        """Truncate affected tables in reverse level order, then run."""
+        run_id = str(uuid.uuid4())
+        log = _log.bind(run_id=run_id, env=self._env)
+        levels = self._list_levels(*seeder_classes)
+        log.info("fresh.start", seeder_count=sum(len(level) for level in levels))
         for level in reversed(levels):
             await asyncio.gather(*[self._truncate_one(cls) for cls in level])
         for level in levels:
-            await asyncio.gather(*[self._run_one(cls) for cls in level])
+            await asyncio.gather(
+                *[self._run_one(cls, log, on_seeder_start, on_seeder_finish) for cls in level]
+            )
+        log.info("fresh.finish")
 
     async def export(
         self, *seeder_classes: type[Seeder]
