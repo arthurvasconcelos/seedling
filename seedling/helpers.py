@@ -93,9 +93,7 @@ async def reset_sequences(session: AsyncSession, *models: type[Any]) -> None:
                 col_obj.primary_key and col_obj.autoincrement != False  # noqa: E712
             ):
                 seq_name = f"{table_name}_{col.key}_seq"
-                await session.execute(
-                    text(f"SELECT setval('{seq_name}', 1, false)")
-                )
+                await session.execute(text(f"SELECT setval('{seq_name}', 1, false)"))
 
 
 @asynccontextmanager

@@ -204,7 +204,9 @@ def export_cmd(
         raise typer.Exit(1)
     output.write_text(json.dumps(data, cls=_JsonEncoder, indent=2))
     total = sum(len(rows) for rows in data.values())
-    _ok(f"Exported [bold]{total}[/bold] rows across [bold]{len(data)}[/bold] table(s) to [cyan]{output}[/cyan]")
+    _ok(
+        f"Exported [bold]{total}[/bold] rows across [bold]{len(data)}[/bold] table(s) to [cyan]{output}[/cyan]"
+    )
 
 
 @app.command("list")
@@ -214,11 +216,16 @@ def list_cmd(
         str, typer.Option("--env", help="Environment to filter by")
     ] = "development",
     quiet: Annotated[
-        bool, typer.Option("--quiet", "-q", help="Print seeder names only, one per line")
+        bool,
+        typer.Option("--quiet", "-q", help="Print seeder names only, one per line"),
     ] = False,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose", "-v", help="Show idempotent flag and models in addition to defaults"),
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Show idempotent flag and models in addition to defaults",
+        ),
     ] = False,
     json_output: Annotated[
         bool, typer.Option("--json", help="Output as JSON array")
@@ -253,7 +260,9 @@ def list_cmd(
         f"[dim]{len(ordered)} seeder{'s' if len(ordered) != 1 else ''}[/dim]"
     )
 
-    table = Table(box=box.SIMPLE_HEAD, show_header=True, header_style="bold", padding=(0, 1))
+    table = Table(
+        box=box.SIMPLE_HEAD, show_header=True, header_style="bold", padding=(0, 1)
+    )
     table.add_column("#", style="dim", justify="right", width=4)
     table.add_column("Seeder")
     table.add_column("Environments", style="cyan")

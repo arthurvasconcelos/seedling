@@ -108,7 +108,11 @@ async def test_upsert_ignores_duplicate(db_session: AsyncSession):
 
     from sqlalchemy import select
 
-    rows = (await db_session.execute(select(Widget).where(Widget.code == "W2"))).scalars().all()
+    rows = (
+        (await db_session.execute(select(Widget).where(Widget.code == "W2")))
+        .scalars()
+        .all()
+    )
     assert len(rows) == 1
     assert rows[0].label == "original"
 
@@ -179,7 +183,9 @@ async def test_reset_sequences_resets_pk_counter_on_pg(db_session: AsyncSession)
 
     from sqlalchemy import select
 
-    row = (await db_session.execute(select(Widget).where(Widget.code == "after"))).scalar_one()
+    row = (
+        await db_session.execute(select(Widget).where(Widget.code == "after"))
+    ).scalar_one()
     assert row.id == 1
 
 
@@ -197,7 +203,9 @@ async def test_deferred_constraints_is_noop_on_sqlite(db_session: AsyncSession):
 
     from sqlalchemy import select
 
-    row = (await db_session.execute(select(Widget).where(Widget.code == "dc1"))).scalar_one()
+    row = (
+        await db_session.execute(select(Widget).where(Widget.code == "dc1"))
+    ).scalar_one()
     assert row.code == "dc1"
 
 
@@ -208,5 +216,7 @@ async def test_deferred_constraints_context_enters_and_exits(db_session: AsyncSe
 
     from sqlalchemy import select
 
-    row = (await db_session.execute(select(Widget).where(Widget.code == "dc2"))).scalar_one()
+    row = (
+        await db_session.execute(select(Widget).where(Widget.code == "dc2"))
+    ).scalar_one()
     assert row.code == "dc2"

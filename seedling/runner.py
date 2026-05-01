@@ -112,7 +112,10 @@ class SeederRunner:
         log.info("run.start", seeder_count=sum(len(level) for level in levels))
         for level in levels:
             await asyncio.gather(
-                *[self._run_one(cls, log, on_seeder_start, on_seeder_finish) for cls in level]
+                *[
+                    self._run_one(cls, log, on_seeder_start, on_seeder_finish)
+                    for cls in level
+                ]
             )
         log.info("run.finish")
 
@@ -131,7 +134,10 @@ class SeederRunner:
             await asyncio.gather(*[self._truncate_one(cls) for cls in level])
         for level in levels:
             await asyncio.gather(
-                *[self._run_one(cls, log, on_seeder_start, on_seeder_finish) for cls in level]
+                *[
+                    self._run_one(cls, log, on_seeder_start, on_seeder_finish)
+                    for cls in level
+                ]
             )
         log.info("fresh.finish")
 
