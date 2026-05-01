@@ -4,6 +4,7 @@ on:
   push:
     branches: ["main"]
   pull_request:
+  workflow_call:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -31,6 +32,36 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: seedling
+          POSTGRES_PASSWORD: seedling
+          POSTGRES_DB: seedling_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_USER: seedling
+          MARIADB_PASSWORD: seedling
+          MARIADB_DATABASE: seedling_test
+          MARIADB_ROOT_PASSWORD: rootpassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -42,8 +73,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
+      - name: Install async DB drivers
+        run: uv add asyncpg asyncmy --dev
+
       - name: Type check (mypy)
         run: uv run mypy seedling/
 
       - name: Tests (pytest)
+        env:
+          SEEDLING_TEST_PG_URL: postgresql+asyncpg://seedling:seedling@localhost:5432/seedling_test
+          SEEDLING_TEST_MARIADB_URL: mysql+asyncmy://seedling:seedling@localhost:3306/seedling_test
         run: uv run pytest
