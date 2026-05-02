@@ -87,3 +87,21 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 asyncio_mode = "auto"
 filterwarnings = ["ignore:coroutine.*was never awaited:RuntimeWarning"]
+
+[tool.coverage.run]
+source = ["seedling"]
+branch = true
+omit = [
+    "seedling/__init__.py",
+    "seedling/environments.py",
+    "seedling/seeder.py",
+    "seedling/exceptions.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "^\\s*pass$",
+]
