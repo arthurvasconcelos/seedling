@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-02
+
+### Added
+
+- **`seed restore <file>`** — inverse of `seed export`. Inserts rows from a
+  fixture file into the database. Tables are matched to registered seeder
+  models by `__tablename__`; unknown tables are skipped with a warning.
+- **YAML support (`[yaml]` extra)** — `pip install sqlalchemy-seedling[yaml]`
+  adds PyYAML. Both `seed export` and `seed restore` auto-detect format from
+  the output file extension (`.json` / `.yaml` / `.yml`). PyYAML is never a
+  hard dependency.
+- **Internal `_formats` module** — pluggable load/dump abstraction used by
+  `export` and `restore`; handles `datetime`, `date`, `Decimal`, and `UUID`
+  serialisation for JSON.
+- **`Seeder.tags`** — new `ClassVar[set[str]]` on `Seeder` (default `set()`).
+  Tag seeders with arbitrary labels (e.g. `tags = {"demo", "smoke"}`).
+- **`seed run --tag <label>`** — filter the run to seeders whose `tags` set
+  intersects the given label(s). Repeatable: `--tag demo --tag smoke`. Same
+  flag added to `seed fresh` and `seed list`.
+- **`runner.run(tags=…)` / `runner.fresh(tags=…)` / `runner.list_seeders(tags=…)`**
+  — tag filtering in the programmatic API.
+- **`@seed(UserSeeder)` pytest helper** — importable from
+  `seedling.pytest_plugin`. Avoids a pytest 9.x ambiguity where
+  `@pytest.mark.seed(SomeClass)` is applied to the class rather than the
+  test. `@pytest.mark.seed([UserSeeder])` (list form) also works.
+- **`_seedling_seed_marker` autouse fixture** — runs the seeders listed in a
+  `@seed(…)` mark before the test body, via the `seedling_runner` fixture.
+- **`seedling_transactional_session` fixture** — wraps each test in a
+  SQLAlchemy `SAVEPOINT` (`begin_nested`) that is automatically rolled back
+  after the test. Keeps the database clean without truncation.
+- **`_seedling_runner_for_marker` internal fixture** — declared as an explicit
+  dependency of `_seedling_seed_marker` to avoid `Runner.run() cannot be
+  called from a running event loop` errors in pytest-asyncio when fixture
+  chains are resolved lazily.
+- **`seed init`** — scaffolds `seeders/` and `factories/` packages and appends
+  a `[tool.seedling]` block to `pyproject.toml`. Opinionated layout, no
+  `--minimal` flag.
+- **`seed make:seeder <Name>`** — generates a seeder stub in
+  `seeders/<name_snake>.py`.
+- **`seed make:factory <module:ClassName>`** — generates an `AutoFactory`
+  stub for a SQLAlchemy model in `factories/<name_snake>.py`. Introspects
+  non-nullable string columns to suggest explicit field stubs.
+- **`resolver.resolve_with_deps` now handles unregistered seeders** — seeders
+  explicitly passed to `runner.run()` but not in the registry are now
+  resolved correctly (sorted by their own dependency graph and appended after
+  registry order). Previously they were silently dropped.
+- **`seedling_session_factory` returns `None` by default** — the plugin
+  fixture no longer raises `NotImplementedError` on import; it raises only
+  when `seedling_runner` is used explicitly without being configured. This
+  prevents the autouse `_seedling_seed_marker` fixture from breaking projects
+  that have not configured the session factory.
+
+### Changed
+
+- `seed export` now delegates to the `_formats` module and supports `.yaml` /
+  `.yml` output paths in addition to `.json`.
+
 ## [0.4.0] - 2026-05-02
 
 ### Added

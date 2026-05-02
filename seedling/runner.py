@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 import structlog
+from sqlalchemy import insert as sa_insert
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -90,25 +91,44 @@ class SeederRunner:
                 return cls
         raise ValueError(f"Unknown seeder: {name!r}")
 
-    def list_seeders(self, *seeder_classes: type[Seeder]) -> list[type[Seeder]]:
-        """Return ordered list filtered by env. Does not execute anything."""
+    def list_seeders(
+        self,
+        *seeder_classes: type[Seeder],
+        tags: set[str] | None = None,
+    ) -> list[type[Seeder]]:
+        """Return ordered list filtered by env and optionally by tags."""
         if seeder_classes:
             ordered = resolve_with_deps(list(seeder_classes), self._registry)
         else:
             ordered = topological_sort(self._registry)
-        return [s for s in ordered if self._env in s.environments]
+        result = [s for s in ordered if self._env in s.environments]
+        if tags:
+            result = [s for s in result if s.tags & tags]
+        return result
 
-    def _list_levels(self, *seeder_classes: type[Seeder]) -> list[list[type[Seeder]]]:
-        """Return env-filtered seeders grouped by parallel execution level."""
+    def _list_levels(
+        self,
+        *seeder_classes: type[Seeder],
+        tags: set[str] | None = None,
+    ) -> list[list[type[Seeder]]]:
+        """Return env- and tag-filtered seeders grouped by parallel execution level."""
         if seeder_classes:
             subset = resolve_with_deps(list(seeder_classes), self._registry)
             levels = topological_levels(subset)
         else:
             levels = topological_levels(self._registry)
+
+        def _keep(s: type[Seeder]) -> bool:
+            if self._env not in s.environments:
+                return False
+            if tags and not (s.tags & tags):
+                return False
+            return True
+
         return [
-            [s for s in level if self._env in s.environments]
+            [s for s in level if _keep(s)]
             for level in levels
-            if any(self._env in s.environments for s in level)
+            if any(_keep(s) for s in level)
         ]
 
     # ── Runner-level lifecycle hooks ─────────────────────────────────────────
@@ -237,11 +257,12 @@ class SeederRunner:
         on_seeder_finish: Callable[[str], None] | None = None,
         new_only: bool = False,
         force: bool = False,
+        tags: set[str] | None = None,
     ) -> None:
         """Run seeders level by level; seeders within a level run in parallel."""
         run_id = str(uuid.uuid4())
         log = _log.bind(run_id=run_id, env=self._env)
-        levels = self._list_levels(*seeder_classes)
+        levels = self._list_levels(*seeder_classes, tags=tags)
         log.info("run.start", seeder_count=sum(len(level) for level in levels))
 
         await self.before_run(run_id, self._env)
@@ -332,11 +353,12 @@ class SeederRunner:
         *seeder_classes: type[Seeder],
         on_seeder_start: Callable[[str], None] | None = None,
         on_seeder_finish: Callable[[str], None] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         """Truncate affected tables in reverse level order, then run."""
         run_id = str(uuid.uuid4())
         log = _log.bind(run_id=run_id, env=self._env)
-        levels = self._list_levels(*seeder_classes)
+        levels = self._list_levels(*seeder_classes, tags=tags)
         log.info("fresh.start", seeder_count=sum(len(level) for level in levels))
 
         if self._state_tracking:
@@ -374,3 +396,37 @@ class SeederRunner:
                     {key: getattr(row, key) for key in col_keys} for row in rows
                 ]
         return result
+
+    async def restore(self, data: dict[str, list[dict[str, Any]]]) -> int:
+        """Insert rows from a fixture dict. Returns total row count inserted.
+
+        Each key in *data* is a table name; the corresponding list contains
+        row dicts with column → value mappings. Rows are inserted using Core
+        bulk insert in table order. The caller is responsible for ordering
+        tables to satisfy FK constraints (export order is safe to restore
+        as-is).
+        """
+        all_models: dict[str, Any] = {}
+        for seeder_cls in self._registry:
+            for model in seeder_cls.models:
+                tname = model.__tablename__
+                if tname not in all_models:
+                    all_models[tname] = model
+
+        total = 0
+        async with self._session_factory() as session:
+            for table_name, rows in data.items():
+                if not rows:
+                    continue
+                model = all_models.get(table_name)
+                if model is None:
+                    _log.warning(
+                        "restore.unknown_table",
+                        table=table_name,
+                        hint="Register a Seeder with models=[...] that includes this table",
+                    )
+                    continue
+                await session.execute(sa_insert(model), rows)
+                total += len(rows)
+            await session.commit()
+        return total

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from typer.testing import CliRunner
 
 from seedling.cli import app
@@ -209,6 +210,95 @@ def test_export_writes_fixture_file(tmp_path, monkeypatch):
     assert "Exported" in result.output
     written = json.loads((tmp_path / "out.json").read_text())
     assert written == fake_data
+
+
+def test_export_writes_yaml_fixture_file(tmp_path, monkeypatch):
+    pytest.importorskip("yaml")
+    monkeypatch.chdir(tmp_path)
+    _make_pyproject(tmp_path)
+
+    mock_seeder_runner = MagicMock()
+    mock_seeder_runner._registry = []
+    fake_data = {"items": [{"id": 1, "name": "test"}]}
+
+    with patch("seedling.cli._get_runner", return_value=mock_seeder_runner):
+        with patch("asyncio.run", return_value=fake_data):
+            result = runner.invoke(
+                app, ["export", "--output", str(tmp_path / "out.yaml")]
+            )
+
+    assert result.exit_code == 0
+    assert "Exported" in result.output
+    import yaml
+
+    written = yaml.safe_load((tmp_path / "out.yaml").read_text())
+    assert written == fake_data
+
+
+# ── restore ───────────────────────────────────────────────────────────────────
+
+
+def test_restore_errors_when_file_not_found(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _make_pyproject(tmp_path)
+
+    result = runner.invoke(app, ["restore", str(tmp_path / "missing.json")])
+    assert result.exit_code != 0
+    assert "not found" in result.output
+
+
+def test_restore_loads_json_and_calls_runner(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _make_pyproject(tmp_path)
+
+    fixture = tmp_path / "fixtures.json"
+    fixture.write_text(json.dumps({"items": [{"id": 1, "name": "a"}]}))
+
+    mock_seeder_runner = MagicMock()
+
+    with patch("seedling.cli._get_runner", return_value=mock_seeder_runner):
+        with patch("asyncio.run", return_value=1) as mock_run:
+            result = runner.invoke(app, ["restore", str(fixture)])
+
+    assert result.exit_code == 0
+    assert "Restored" in result.output
+    mock_run.assert_called_once()
+
+
+def test_restore_loads_yaml_and_calls_runner(tmp_path, monkeypatch):
+    pytest.importorskip("yaml")
+    import yaml as _yaml
+
+    monkeypatch.chdir(tmp_path)
+    _make_pyproject(tmp_path)
+
+    fixture = tmp_path / "fixtures.yaml"
+    fixture.write_text(_yaml.dump({"items": [{"id": 1, "name": "b"}]}))
+
+    mock_seeder_runner = MagicMock()
+
+    with patch("seedling.cli._get_runner", return_value=mock_seeder_runner):
+        with patch("asyncio.run", return_value=1):
+            result = runner.invoke(app, ["restore", str(fixture)])
+
+    assert result.exit_code == 0
+    assert "Restored" in result.output
+
+
+def test_restore_errors_on_bad_json(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _make_pyproject(tmp_path)
+
+    fixture = tmp_path / "bad.json"
+    fixture.write_text("not json at all {{{{")
+
+    mock_seeder_runner = MagicMock()
+
+    with patch("seedling.cli._get_runner", return_value=mock_seeder_runner):
+        result = runner.invoke(app, ["restore", str(fixture)])
+
+    assert result.exit_code != 0
+    assert "Failed to parse" in result.output
 
 
 # ── list flags ───────────────────────────────────────────────────────────────

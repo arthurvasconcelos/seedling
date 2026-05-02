@@ -22,6 +22,9 @@ class Seeder:
     # Declared here to support `seed export`.
     models: ClassVar[list[Any]] = []
 
+    # Optional labels for tag-based filtering (e.g. seed run --tag demo).
+    tags: ClassVar[set[str]] = set()
+
     async def run(self, session: AsyncSession) -> None:
         raise NotImplementedError
 

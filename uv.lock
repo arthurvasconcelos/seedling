@@ -1031,7 +1031,7 @@ asyncio = [
 
 [[package]]
 name = "sqlalchemy-seedling"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "faker" },
@@ -1039,6 +1039,11 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "structlog" },
     { name = "typer" },
+]
+
+[package.optional-dependencies]
+yaml = [
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -1060,11 +1065,13 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "faker", specifier = ">=20" },
+    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
     { name = "structlog", specifier = ">=24.0" },
     { name = "typer", specifier = ">=0.12" },
 ]
+provides-extras = ["yaml"]
 
 [package.metadata.requires-dev]
 dev = [

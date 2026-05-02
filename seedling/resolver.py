@@ -50,7 +50,12 @@ def resolve_with_deps(
     requested: list[type[Seeder]],
     registry: list[type[Seeder]],
 ) -> list[type[Seeder]]:
-    """Walk depends_on recursively to collect all required seeders."""
+    """Walk depends_on recursively to collect all required seeders.
+
+    Seeders that are explicitly requested (or are transitive dependencies of
+    requested seeders) but not in *registry* are still included — they are
+    sorted after the registry order using their own dependency graph.
+    """
     needed: set[type[Seeder]] = set()
 
     def walk(cls: type[Seeder]) -> None:
@@ -63,5 +68,7 @@ def resolve_with_deps(
     for cls in requested:
         walk(cls)
 
-    all_ordered = topological_sort(registry)
-    return [s for s in all_ordered if s in needed]
+    registry_set = set(registry)
+    extra = [s for s in needed if s not in registry_set]
+    all_seeders = registry + extra
+    return [s for s in topological_sort(all_seeders) if s in needed]

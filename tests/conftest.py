@@ -55,3 +55,9 @@ def session_factory(engine):
 async def session(session_factory):
     async with session_factory() as s:
         yield s
+
+
+@pytest.fixture
+def seedling_session_factory(session_factory):
+    """Wire seedling's session factory to the test suite's in-memory SQLite engine."""
+    return session_factory
