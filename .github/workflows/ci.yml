@@ -117,20 +117,25 @@ jobs:
       - name: Install aiosqlite
         run: uv add aiosqlite --dev
 
-      - name: Run create_batch benchmark
-        run: uv run python benchmarks/bench_create_batch.py --json --rows 1000 > bench_create_batch.json
-
-      - name: Run parallel benchmark
-        run: uv run python benchmarks/bench_parallel.py --json > bench_parallel.json
-
-      - name: Merge benchmark results
+      - name: Collect benchmark results
         run: |
-          python -c "
-          import json
-          a = json.load(open('bench_create_batch.json'))
-          b = json.load(open('bench_parallel.json'))
-          print(json.dumps(a + b))
-          " > benchmark_results.json
+          uv run python -c "
+          import asyncio, json, sys
+          import structlog
+          structlog.configure(logger_factory=structlog.PrintLoggerFactory(file=sys.stderr))
+          from benchmarks.bench_create_batch import run as cb_run
+          from benchmarks.bench_parallel import run as par_run
+          per_row, bulk = asyncio.run(cb_run(1000))
+          parallel, sequential = asyncio.run(par_run())
+          results = [
+              {'name': 'create_batch per-row 1000 rows', 'unit': 'seconds', 'value': round(per_row, 4)},
+              {'name': 'create_batch bulk 1000 rows',    'unit': 'seconds', 'value': round(bulk, 4)},
+              {'name': 'parallel 3 seeders',             'unit': 'seconds', 'value': round(parallel, 4)},
+              {'name': 'sequential 3 seeders',           'unit': 'seconds', 'value': round(sequential, 4)},
+          ]
+          json.dump(results, open('benchmark_results.json', 'w'))
+          print(f'Bulk speedup: {per_row/bulk:.1f}x  |  Parallel speedup: {sequential/parallel:.1f}x')
+          "
 
       - name: Store benchmark results
         uses: benchmark-action/github-action-benchmark@v1
