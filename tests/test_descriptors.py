@@ -4,16 +4,13 @@ import pytest
 
 from seedling.factory import (
     AutoFactory,
-    Faker,
     Factory,
+    Faker,
     Iterator,
-    LazyAttribute,
     SelfAttribute,
-    Sequence,
     Skip,
 )
 from tests.conftest import Author, Item
-
 
 # ── SelfAttribute ──────────────────────────────────────────────────────────────
 
@@ -201,6 +198,7 @@ async def test_faker_descriptor_in_create(session):
 
 def test_skip_is_singleton():
     from seedling.factory import Skip as Skip2
+
     assert Skip is Skip2
 
 

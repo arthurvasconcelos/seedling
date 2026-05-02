@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from seedling.factory import AutoFactory, Factory, LazyAttribute, Sequence, SubFactory, Trait
+from seedling.factory import (
+    AutoFactory,
+    Factory,
+    LazyAttribute,
+    Sequence,
+    SubFactory,
+    Trait,
+)
 from tests.conftest import Author, Item
 
 

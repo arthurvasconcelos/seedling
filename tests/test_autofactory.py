@@ -3,9 +3,8 @@ from __future__ import annotations
 import pytest
 
 from seedling.exceptions import AutoFactoryResolutionError
-from seedling.factory import AutoFactory, LazyAttribute, Sequence, _clear_registry
+from seedling.factory import AutoFactory, LazyAttribute, _clear_registry
 from tests.conftest import Article, Author, Item
-
 
 # ── fixtures ───────────────────────────────────────────────────────────────────
 

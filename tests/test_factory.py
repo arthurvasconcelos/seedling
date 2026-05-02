@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from seedling.factory import Factory, LazyAttribute, Sequence, SubFactory, Trait, _clear_registry, get_factory
+from seedling.factory import (
+    Factory,
+    LazyAttribute,
+    Sequence,
+    SubFactory,
+    Trait,
+    get_factory,
+)
 from tests.conftest import Item
 
 
@@ -194,6 +201,7 @@ async def test_create_lazy_attribute(session):
 def isolated_registry():
     """Snapshot and restore the registry around a test to avoid cross-test pollution."""
     from seedling.factory import _registry
+
     snapshot = dict(_registry)
     yield
     _registry.clear()

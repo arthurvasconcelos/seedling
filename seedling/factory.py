@@ -235,12 +235,12 @@ class RelatedFactory:
 class RelatedFactoryList:
     """Like ``RelatedFactory`` but creates *size* related instances.
 
-        class AuthorFactory(Factory[Author]):
-            articles = RelatedFactoryList(
-                ArticleFactory,
-                size=3,
-                author_id=lambda inst: inst.id,
-            )
+    class AuthorFactory(Factory[Author]):
+        articles = RelatedFactoryList(
+            ArticleFactory,
+            size=3,
+            author_id=lambda inst: inst.id,
+        )
     """
 
     def __init__(
@@ -254,7 +254,9 @@ class RelatedFactoryList:
         resolved = {
             k: (v(instance) if callable(v) else v) for k, v in self.kwargs.items()
         }
-        return [await self.factory.create(session, **resolved) for _ in range(self.size)]
+        return [
+            await self.factory.create(session, **resolved) for _ in range(self.size)
+        ]
 
 
 class Trait:
@@ -321,7 +323,9 @@ class Factory(Generic[T]):
                     continue
                 if inspect.isclass(value):
                     continue
-                if isinstance(value, post_generation | RelatedFactory | RelatedFactoryList):
+                if isinstance(
+                    value, post_generation | RelatedFactory | RelatedFactoryList
+                ):
                     continue
                 fields[name] = value
         return fields
@@ -453,13 +457,21 @@ class Factory(Generic[T]):
         _computed = LazyAttribute | SelfAttribute | Faker | Sequence | Iterator
 
         for name, descriptor in merged.items():
-            if name in effective_overrides or isinstance(descriptor, _db_only) or descriptor is Skip:
+            if (
+                name in effective_overrides
+                or isinstance(descriptor, _db_only)
+                or descriptor is Skip
+            ):
                 continue
             if not isinstance(descriptor, _computed):
                 built[name] = descriptor
 
         for name, descriptor in merged.items():
-            if name in effective_overrides or isinstance(descriptor, _db_only) or descriptor is Skip:
+            if (
+                name in effective_overrides
+                or isinstance(descriptor, _db_only)
+                or descriptor is Skip
+            ):
                 continue
             if isinstance(descriptor, LazyAttribute):
                 built[name] = descriptor.func({**built, **effective_overrides})
@@ -476,7 +488,11 @@ class Factory(Generic[T]):
                 built[name] = descriptor.generate()
 
         for name, descriptor in merged.items():
-            if name in effective_overrides or isinstance(descriptor, _db_only) or descriptor is Skip:
+            if (
+                name in effective_overrides
+                or isinstance(descriptor, _db_only)
+                or descriptor is Skip
+            ):
                 continue
             if isinstance(descriptor, Sequence):
                 built[name] = descriptor.func(cls._next_sequence())
@@ -540,12 +556,18 @@ class Factory(Generic[T]):
                 built[name] = _get_pk_value(related)
             elif isinstance(descriptor, _UnresolvableFK):
                 raise AutoFactoryResolutionError(
-                    descriptor.factory_name, descriptor.col_name, descriptor.target_table
+                    descriptor.factory_name,
+                    descriptor.col_name,
+                    descriptor.target_table,
                 )
 
         # 3. Computed: LazyAttribute, SelfAttribute, Faker
         for name, descriptor in merged.items():
-            if name in effective_overrides or isinstance(descriptor, _db_only) or descriptor is Skip:
+            if (
+                name in effective_overrides
+                or isinstance(descriptor, _db_only)
+                or descriptor is Skip
+            ):
                 continue
             if isinstance(descriptor, LazyAttribute):
                 built[name] = descriptor.func({**built, **effective_overrides})
@@ -563,7 +585,11 @@ class Factory(Generic[T]):
 
         # 4. Sequence and Iterator
         for name, descriptor in merged.items():
-            if name in effective_overrides or isinstance(descriptor, _db_only) or descriptor is Skip:
+            if (
+                name in effective_overrides
+                or isinstance(descriptor, _db_only)
+                or descriptor is Skip
+            ):
                 continue
             if isinstance(descriptor, Sequence):
                 built[name] = descriptor.func(cls._next_sequence())
@@ -718,7 +744,9 @@ class AutoFactory(Factory[T]):
                             return _FKSubFactory(registered)
                         if col.nullable:
                             return None
-                        return _UnresolvableFK(col_name, target_table.name, factory_name)
+                        return _UnresolvableFK(
+                            col_name, target_table.name, factory_name
+                        )
             except Exception:
                 pass
 

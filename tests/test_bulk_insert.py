@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import pytest
-
-from seedling.factory import Factory, LazyAttribute, Sequence, post_generation
+from seedling.factory import Factory, Sequence, post_generation
 from tests.conftest import Item
 
 

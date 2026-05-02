@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from seedling.factory import Faker, Factory
+from seedling.factory import Factory, Faker
 from tests.conftest import Author, Item
 
 

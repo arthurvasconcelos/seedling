@@ -3,7 +3,6 @@ from __future__ import annotations
 from seedling.factory import Factory, post_generation
 from tests.conftest import Article, Author, Item
 
-
 # ── basic: fires after create, skipped in build ─────────────────────────────
 
 

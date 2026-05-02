@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from sqlalchemy import Integer, String, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from seedling.factory import Factory, RelatedFactory, RelatedFactoryList, post_generation
-from tests.conftest import Article, Author, Item
-
+from seedling.factory import (
+    Factory,
+    RelatedFactory,
+    RelatedFactoryList,
+    post_generation,
+)
+from tests.conftest import Article, Author
 
 # ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -58,9 +61,7 @@ async def test_related_factory_callable_kwarg_receives_parent(session):
         email = "b@example.com"
         first_name = "B"
 
-        article = RelatedFactory(
-            TrackingArticleFactory, author_id=lambda inst: inst.id
-        )
+        article = RelatedFactory(TrackingArticleFactory, author_id=lambda inst: inst.id)
 
     author = await WithTrackedArticle.create(session)
     assert received == [author.id]
@@ -72,7 +73,9 @@ async def test_related_factory_literal_kwarg(session):
         email = "c@example.com"
         first_name = "C"
 
-        article = RelatedFactory(ArticleFactory, title="literal-title", author_id=lambda inst: inst.id)
+        article = RelatedFactory(
+            ArticleFactory, title="literal-title", author_id=lambda inst: inst.id
+        )
 
     author = await ItemWithLiteral.create(session)
     result = await session.execute(
@@ -101,9 +104,7 @@ async def test_related_factory_does_not_set_attribute_on_parent(session):
         email = "e@example.com"
         first_name = "E"
 
-        related_article = RelatedFactory(
-            ArticleFactory, author_id=lambda inst: inst.id
-        )
+        related_article = RelatedFactory(ArticleFactory, author_id=lambda inst: inst.id)
 
     author = await WithArticle.create(session)
     assert not hasattr(author, "related_article")
@@ -154,9 +155,7 @@ async def test_related_factory_list_size_one_default(session):
         email = "h@example.com"
         first_name = "H"
 
-        articles = RelatedFactoryList(
-            ArticleFactory, author_id=lambda inst: inst.id
-        )
+        articles = RelatedFactoryList(ArticleFactory, author_id=lambda inst: inst.id)
 
     author = await WithOneArticle.create(session)
     result = await session.execute(
