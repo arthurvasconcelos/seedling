@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777755608095,
+  "lastUpdate": 1777755767836,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -87,6 +87,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.676,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1f69d7ae86799e45ec69a49445f974cfb80aa2c",
+          "message": "Merge pull request #2 from arthurvasconcelos/dependabot/uv/uv-590e9db7b9\n\nchore(deps-dev): bump pytest from 9.0.2 to 9.0.3 in the uv group across 1 directory",
+          "timestamp": "2026-05-02T23:02:29+02:00",
+          "tree_id": "1573ef5ef22b1a977aef888ba998b0a3ede8bceb",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/f1f69d7ae86799e45ec69a49445f974cfb80aa2c"
+        },
+        "date": 1777755767248,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.1705,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1197,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.673,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.7444,
             "unit": "seconds"
           }
         ]
