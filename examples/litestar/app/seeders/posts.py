@@ -3,10 +3,10 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from seedling import Seeder, DEV_AND_TEST, truncate_tables
 from examples.litestar.app.factories.post import PostFactory
 from examples.litestar.app.models import Post, User
 from examples.litestar.app.seeders.users import UserSeeder
+from seedling import DEV_AND_TEST, Seeder, truncate_tables
 
 
 class PostSeeder(Seeder):

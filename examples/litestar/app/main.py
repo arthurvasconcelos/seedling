@@ -13,15 +13,16 @@ Or via the API:
 
 from __future__ import annotations
 
-from litestar import Litestar, get, post
 from sqlalchemy import select
 
 from examples.litestar.app.database import async_session
 from examples.litestar.app.models import Base, Post, User
+from litestar import Litestar, get, post
 
 
 async def on_startup() -> None:
     from examples.litestar.app.database import engine
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -29,6 +30,7 @@ async def on_startup() -> None:
 @post("/seed")
 async def seed_development() -> dict[str, str]:
     from examples.litestar.app.seeders import create_runner
+
     await create_runner("development").run()
     return {"status": "seeded"}
 
@@ -36,6 +38,7 @@ async def seed_development() -> dict[str, str]:
 @post("/fresh")
 async def fresh_development() -> dict[str, str]:
     from examples.litestar.app.seeders import create_runner
+
     await create_runner("development").fresh()
     return {"status": "freshly seeded"}
 

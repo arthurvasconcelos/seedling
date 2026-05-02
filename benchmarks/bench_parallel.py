@@ -17,7 +17,7 @@ from sqlalchemy import String
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from seedling import AutoFactory, SeederRunner, Seeder, DEV_AND_TEST
+from seedling import DEV_AND_TEST, AutoFactory, Seeder, SeederRunner
 
 
 class Base(DeclarativeBase):

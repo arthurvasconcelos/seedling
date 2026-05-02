@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from seedling import AutoFactory
 from examples.script.models import User
+from seedling import AutoFactory
 
 
 class UserFactory(AutoFactory[User]):

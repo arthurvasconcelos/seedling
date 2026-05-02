@@ -10,8 +10,8 @@ starting a server or requiring a PostgreSQL instance.
 from __future__ import annotations
 
 import importlib
-import pytest
 
+import pytest
 
 # ── script example ────────────────────────────────────────────────────────────
 

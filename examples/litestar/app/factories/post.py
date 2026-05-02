@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from seedling import AutoFactory
 from examples.litestar.app.models import Post
+from seedling import AutoFactory
 
 
 class PostFactory(AutoFactory[Post]):

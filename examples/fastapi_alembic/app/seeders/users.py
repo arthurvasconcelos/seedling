@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from seedling import Seeder, DEV_AND_TEST, truncate_tables
 from examples.fastapi_alembic.app.factories.user import UserFactory
 from examples.fastapi_alembic.app.models import User
+from seedling import DEV_AND_TEST, Seeder, truncate_tables
 
 
 class UserSeeder(Seeder):

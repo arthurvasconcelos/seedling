@@ -15,8 +15,8 @@ Or run via the API:
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from sqlalchemy import select
@@ -36,6 +36,7 @@ app = FastAPI(title="seedling — FastAPI + Alembic example", lifespan=lifespan)
 @app.post("/seed")
 async def seed_development() -> dict[str, str]:
     from examples.fastapi_alembic.app.seeders import create_runner
+
     await create_runner("development").run()
     return {"status": "seeded"}
 
@@ -43,6 +44,7 @@ async def seed_development() -> dict[str, str]:
 @app.post("/fresh")
 async def fresh_development() -> dict[str, str]:
     from examples.fastapi_alembic.app.seeders import create_runner
+
     await create_runner("development").fresh()
     return {"status": "freshly seeded"}
 

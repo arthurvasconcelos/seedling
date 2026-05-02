@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from seedling import SeederRunner
-
 from examples.script.seeders.posts import PostSeeder
 from examples.script.seeders.users import UserSeeder
+from seedling import SeederRunner
 
 
 def create_runner(
