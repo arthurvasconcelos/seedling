@@ -95,3 +95,51 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  benchmark:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Install aiosqlite
+        run: uv add aiosqlite --dev
+
+      - name: Run create_batch benchmark
+        run: uv run python benchmarks/bench_create_batch.py --json --rows 1000 > bench_create_batch.json
+
+      - name: Run parallel benchmark
+        run: uv run python benchmarks/bench_parallel.py --json > bench_parallel.json
+
+      - name: Merge benchmark results
+        run: |
+          python -c "
+          import json
+          a = json.load(open('bench_create_batch.json'))
+          b = json.load(open('bench_parallel.json'))
+          print(json.dumps(a + b))
+          " > benchmark_results.json
+
+      - name: Store benchmark results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: customSmallerIsBetter
+          output-file-path: benchmark_results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: "130%"
+          comment-on-alert: true
+          fail-on-alert: false
+          benchmark-data-dir-path: dev/bench

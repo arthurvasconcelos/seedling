@@ -57,3 +57,4 @@ nav:
   - Configuration: configuration.md
   - Migrate from factory_boy: migration.md
   - Cookbook: cookbook.md
+  - Benchmarks: benchmarks.md

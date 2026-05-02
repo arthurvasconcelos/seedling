@@ -1,16 +1,19 @@
 """
 Benchmark: parallel level execution vs sequential.
 
-Simulates a two-level seeder graph where each seeder does 100 per-row inserts.
+Simulates a two-level seeder graph where each seeder does 200 per-row inserts.
 Measures total wall-clock time with and without parallel execution.
 
 Usage:
     uv run python benchmarks/bench_parallel.py
+    uv run python benchmarks/bench_parallel.py --json   # for CI benchmark tracking
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
+import json
 import time
 
 from sqlalchemy import String
@@ -79,20 +82,18 @@ class GammaSeeder(Seeder):
         await GammaFactory.create_batch(session, ROWS)
 
 
-async def run() -> None:
+async def run() -> tuple[float, float]:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-    # Parallel (default): Alpha + Beta run simultaneously, then Gamma
     runner = SeederRunner(session_factory, env="development", state_tracking=False)
     runner.register(AlphaSeeder, BetaSeeder, GammaSeeder)
     start = time.perf_counter()
     await runner.run()
     parallel_s = time.perf_counter() - start
 
-    # Sequential: cap parallelism to 1
     runner2 = SeederRunner(
         session_factory, env="development", state_tracking=False, max_parallel=1
     )
@@ -102,12 +103,37 @@ async def run() -> None:
     sequential_s = time.perf_counter() - start
 
     await engine.dispose()
-
-    print(f"Seeders: 3 (Alpha + Beta in parallel, then Gamma)  |  {ROWS} rows each")
-    print(f"  parallel   : {parallel_s:.3f}s")
-    print(f"  sequential : {sequential_s:.3f}s")
-    print(f"  speedup    : {sequential_s / parallel_s:.1f}x")
+    return parallel_s, sequential_s
 
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--json", action="store_true", help="Output JSON for CI benchmark tracking"
+    )
+    args = parser.parse_args()
+
+    parallel_s, sequential_s = asyncio.run(run())
+
+    if args.json:
+        print(
+            json.dumps(
+                [
+                    {
+                        "name": "parallel 3 seeders",
+                        "unit": "seconds",
+                        "value": round(parallel_s, 4),
+                    },
+                    {
+                        "name": "sequential 3 seeders",
+                        "unit": "seconds",
+                        "value": round(sequential_s, 4),
+                    },
+                ]
+            )
+        )
+    else:
+        print(f"Seeders: 3 (Alpha + Beta in parallel, then Gamma)  |  {ROWS} rows each")
+        print(f"  parallel   : {parallel_s:.3f}s")
+        print(f"  sequential : {sequential_s:.3f}s")
+        print(f"  speedup    : {sequential_s / parallel_s:.1f}x")
