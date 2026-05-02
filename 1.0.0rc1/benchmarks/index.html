@@ -10,13 +10,11 @@
       
       
       
-        <link rel="canonical" href="https://arthurvasconcelos.github.io/seedling/1.0.0rc1/configuration/">
+        <link rel="canonical" href="https://arthurvasconcelos.github.io/seedling/1.0.0rc1/benchmarks/">
       
       
-        <link rel="prev" href="../cli/">
+        <link rel="prev" href="../cookbook/">
       
-      
-        <link rel="next" href="../migration/">
       
       
         
@@ -27,7 +25,7 @@
     
     
       
-        <title>Configuration - sqlalchemy-seedling</title>
+        <title>Benchmarks - sqlalchemy-seedling</title>
       
     
     
@@ -78,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuration" class="md-skip">
+        <a href="#benchmarks" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Configuration
+              Benchmarks
             
           </span>
         </div>
@@ -423,37 +421,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Configuration
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
         
   
   
@@ -469,76 +440,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#toolseedling" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        [tool.seedling]
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="[tool.seedling]">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#runner-required" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        runner (required)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#state_tracking-optional-default-true" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        state_tracking (optional, default true)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pytest-plugin-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        pytest plugin configuration
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -601,10 +502,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../benchmarks/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -620,6 +548,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bulk-insert-create_batchbulktrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bulk insert: create_batch(bulk=True)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parallel-level-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel level execution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracking-over-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracking over time
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -651,49 +632,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#toolseedling" class="md-nav__link">
+  <a href="#bulk-insert-create_batchbulktrue" class="md-nav__link">
     <span class="md-ellipsis">
       
-        [tool.seedling]
+        Bulk insert: create_batch(bulk=True)
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="[tool.seedling]">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#runner-required" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        runner (required)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#state_tracking-optional-default-true" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        state_tracking (optional, default true)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pytest-plugin-configuration" class="md-nav__link">
+  <a href="#parallel-level-execution" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pytest plugin configuration
+        Parallel level execution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracking-over-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracking over time
       
     </span>
   </a>
@@ -720,53 +684,90 @@
   
 
 
-<h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h1>
-<p>seedling is configured via <code>[tool.seedling]</code> in your project's <code>pyproject.toml</code>.</p>
-<h2 id="toolseedling"><code>[tool.seedling]</code><a class="headerlink" href="#toolseedling" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[tool.seedling]</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp.seeders:create_runner&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">state_tracking</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<h1 id="benchmarks">Benchmarks<a class="headerlink" href="#benchmarks" title="Permanent link">&para;</a></h1>
+<p>All benchmarks run against an in-memory SQLite database on a single machine.
+SQLite has no network latency, so the absolute numbers are faster than a real
+PostgreSQL instance — but the <strong>relative speedups are conservative</strong>. Against
+a networked database the bulk insert and parallel execution gains are larger
+because each per-row round-trip carries real latency.</p>
+<p>To reproduce locally:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>benchmarks/bench_create_batch.py<span class="w"> </span>--rows<span class="w"> </span><span class="m">1000</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>benchmarks/bench_parallel.py
 </code></pre></div>
-<h3 id="runner-required"><code>runner</code> (required)<a class="headerlink" href="#runner-required" title="Permanent link">&para;</a></h3>
-<p>A <code>module:function</code> path to a factory function that creates and returns a <code>SeederRunner</code>.</p>
-<p>The function receives one argument — the environment string (e.g. <code>"development"</code>, <code>"test"</code>, <code>"production"</code>) — and must return a configured <code>SeederRunner</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># myapp/seeders/__init__.py</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_sessionmaker</span><span class="p">,</span> <span class="n">create_async_engine</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">seedling</span><span class="w"> </span><span class="kn">import</span> <span class="n">SeederRunner</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">create_runner</span><span class="p">(</span><span class="n">env</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SeederRunner</span><span class="p">:</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_async_engine</span><span class="p">(</span><span class="s2">&quot;postgresql+asyncpg://user:pass@localhost/mydb&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">session_factory</span> <span class="o">=</span> <span class="n">async_sessionmaker</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">expire_on_commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">runner</span> <span class="o">=</span> <span class="n">SeederRunner</span><span class="p">(</span><span class="n">session_factory</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">runner</span><span class="o">.</span><span class="n">discover</span><span class="p">(</span><span class="s2">&quot;myapp.seeders&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="k">return</span> <span class="n">runner</span>
-</code></pre></div>
-<h3 id="state_tracking-optional-default-true"><code>state_tracking</code> (optional, default <code>true</code>)<a class="headerlink" href="#state_tracking-optional-default-true" title="Permanent link">&para;</a></h3>
-<p>Controls whether the runner records executions in the <code>seedling_state</code> table.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[tool.seedling]</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">runner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp.seeders:create_runner&quot;</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">state_tracking</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
-</code></pre></div>
-<p>When <code>false</code>, the <code>seedling_state</code> table is never created or queried. <code>seed status</code> will show no data, and <code>--new-only</code> has no effect. Useful for ephemeral environments where audit history is not needed.</p>
-<p>This setting is read by the CLI and applied to every runner returned by your factory. You can also set it directly on the runner instance:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">runner</span> <span class="o">=</span> <span class="n">SeederRunner</span><span class="p">(</span><span class="n">session_factory</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span> <span class="n">state_tracking</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="pytest-plugin-configuration">pytest plugin configuration<a class="headerlink" href="#pytest-plugin-configuration" title="Permanent link">&para;</a></h2>
-<p>Override the <code>seedling_session_factory</code> fixture in your <code>conftest.py</code> to supply the session factory used by the <code>seedling_runner</code> fixture:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># conftest.py</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_sessionmaker</span><span class="p">,</span> <span class="n">create_async_engine</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">seedling_session_factory</span><span class="p">():</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_async_engine</span><span class="p">(</span><span class="s2">&quot;sqlite+aiosqlite:///:memory:&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="k">return</span> <span class="n">async_sessionmaker</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">expire_on_commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div>
-<p>Override <code>seedling_env</code> to change the default environment used in tests (defaults to <code>"test"</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">seedling_env</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="k">return</span> <span class="s2">&quot;development&quot;</span>
-</code></pre></div>
+<hr />
+<h2 id="bulk-insert-create_batchbulktrue">Bulk insert: <code>create_batch(bulk=True)</code><a class="headerlink" href="#bulk-insert-create_batchbulktrue" title="Permanent link">&para;</a></h2>
+<p><code>create_batch(bulk=True)</code> uses a single <code>INSERT ... RETURNING</code> statement
+instead of N per-row <code>add</code> + <code>flush</code> calls.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Rows</th>
+<th style="text-align: right;">Per-row</th>
+<th style="text-align: right;">Bulk</th>
+<th style="text-align: right;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">0.044s</td>
+<td style="text-align: right;">0.006s</td>
+<td style="text-align: right;"><strong>7.3x</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">1 000</td>
+<td style="text-align: right;">0.412s</td>
+<td style="text-align: right;">0.055s</td>
+<td style="text-align: right;"><strong>7.6x</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">5 000</td>
+<td style="text-align: right;">2.116s</td>
+<td style="text-align: right;">0.278s</td>
+<td style="text-align: right;"><strong>7.6x</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The speedup stabilises around <strong>7–8x</strong> and holds linearly — bulk insert scales
+at ~18 000 rows/s vs ~2 400 rows/s per-row on SQLite. The gap widens further
+on PostgreSQL where each round-trip carries network overhead.</p>
+<p><strong>When to use <code>bulk=True</code>:</strong> any batch larger than a few hundred rows where
+you don't need <code>@post_generation</code> hooks or <code>RelatedFactory</code> to fire.</p>
+<hr />
+<h2 id="parallel-level-execution">Parallel level execution<a class="headerlink" href="#parallel-level-execution" title="Permanent link">&para;</a></h2>
+<p>Independent seeders (no <code>depends_on</code> relationship) run concurrently via
+<code>asyncio.gather</code>. The benchmark uses three seeders: Alpha and Beta run in
+parallel, then Gamma runs after both complete.</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th style="text-align: right;">Time</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Parallel (default)</td>
+<td style="text-align: right;">0.219s</td>
+<td>Alpha + Beta concurrent</td>
+</tr>
+<tr>
+<td>Sequential (<code>max_parallel=1</code>)</td>
+<td style="text-align: right;">0.245s</td>
+<td>Alpha → Beta → Gamma</td>
+</tr>
+</tbody>
+</table>
+<p>The SQLite in-memory numbers show only a modest gain because SQLite
+serialises writes internally. Against PostgreSQL the parallel advantage grows
+proportionally with the number of independent seeders and their individual
+durations — two 5-second seeders that run in parallel take 5s instead of 10s.</p>
+<hr />
+<h2 id="tracking-over-time">Tracking over time<a class="headerlink" href="#tracking-over-time" title="Permanent link">&para;</a></h2>
+<p>Benchmark results are recorded automatically on every push to <code>main</code> and
+displayed as a time-series chart on the
+<a href="https://arthurvasconcelos.github.io/seedling/dev/bench/">GitHub Pages benchmark dashboard</a>.</p>
 
 
 
