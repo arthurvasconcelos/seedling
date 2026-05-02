@@ -101,7 +101,6 @@ def test_seed_marker_is_registered_in_pytest(pytestconfig):
 
 
 def test_seed_helper_creates_mark_decorator():
-
     mark = seed(MarkItemSeeder)
     assert hasattr(mark, "mark")
     assert mark.mark.name == "seed"
