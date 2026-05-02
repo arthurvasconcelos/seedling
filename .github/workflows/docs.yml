@@ -7,25 +7,30 @@ on:
       - "docs/**"
       - "mkdocs.yml"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version alias to deploy (e.g. 1.0)"
+        required: false
+        default: ""
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: docs-deploy
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -33,20 +38,17 @@ jobs:
       - name: Install docs dependencies
         run: uv sync --group docs
 
-      - name: Build docs
-        run: uv run mkdocs build
+      - name: Configure git for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - uses: actions/deploy-pages@v4
-        id: deployment
+      - name: Deploy versioned docs
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [[ -z "$VERSION" ]]; then
+            # Read version from pyproject.toml
+            VERSION=$(uv run python -c "import tomllib; print(tomllib.loads(open('pyproject.toml').read())['project']['version'])")
+          fi
+          uv run mike deploy --push --update-aliases "$VERSION" latest
+          uv run mike set-default --push latest

@@ -7,6 +7,7 @@ seedling is configured via `[tool.seedling]` in your project's `pyproject.toml`.
 ```toml
 [tool.seedling]
 runner = "myapp.seeders:create_runner"
+state_tracking = true
 ```
 
 ### `runner` (required)
@@ -26,6 +27,24 @@ def create_runner(env: str) -> SeederRunner:
     runner = SeederRunner(session_factory, env=env)
     runner.discover("myapp.seeders")
     return runner
+```
+
+### `state_tracking` (optional, default `true`)
+
+Controls whether the runner records executions in the `seedling_state` table.
+
+```toml
+[tool.seedling]
+runner = "myapp.seeders:create_runner"
+state_tracking = false
+```
+
+When `false`, the `seedling_state` table is never created or queried. `seed status` will show no data, and `--new-only` has no effect. Useful for ephemeral environments where audit history is not needed.
+
+This setting is read by the CLI and applied to every runner returned by your factory. You can also set it directly on the runner instance:
+
+```python
+runner = SeederRunner(session_factory, env=env, state_tracking=False)
 ```
 
 ## pytest plugin configuration

@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0rc1] - 2026-05-02
+
+### Added
+
+- **`__version__`** — `seedling.__version__` is now a public string constant.
+- **`docs/migration.md`** — side-by-side migration guide from `factory_boy` covering
+  all common patterns: `LazyAttribute`, `Sequence`, `SubFactory`, `Trait`, `@post_generation`,
+  `RelatedFactory`, bulk insert, `Faker`, and `AutoFactory`.
+- **`docs/cookbook.md`** — recipes for cyclic foreign keys, polymorphic models, JSONB /
+  array columns, time-series data, large tables (`bulk=True`, chunked seeding), and
+  transactional test fixtures.
+- **Example apps** — three fully-wired example applications:
+  - `examples/script/` — plain SQLAlchemy script, no framework. Runs end-to-end
+    against SQLite with `AutoFactory` factories.
+  - `examples/fastapi_alembic/` — FastAPI app with Alembic migrations, async seeder
+    runner, and `AutoFactory` factories targeting PostgreSQL.
+  - `examples/litestar/` — Litestar app with the same seeder/factory structure.
+- **`tests/test_smoke_examples.py`** — CI smoke tests: `examples/script/` runs a full
+  seed + export cycle against in-memory SQLite; FastAPI and Litestar examples are
+  verified as import-clean.
+- **`benchmarks/bench_create_batch.py`** — benchmark comparing per-row `create_batch()`
+  vs `create_batch(bulk=True)`.
+- **`benchmarks/bench_parallel.py`** — benchmark comparing parallel level execution vs
+  `max_parallel=1` (sequential).
+- **`mkdocs.yml`** — search plugin enabled (`search.highlight`, `search.suggest`);
+  `state-tracking.md`, `migration.md`, and `cookbook.md` added to the navigation.
+
+### Changed
+
+- **`seedling/__init__.py`** — `compute_hash`, `ensure_state_table`, and
+  `get_latest_states` removed from `__all__` and the public import surface. They
+  remain accessible via `seedling.state` for internal use but are not part of the
+  stable public API.
+- **`pyproject.toml`** — version bumped to `1.0.0rc1`.
+- **`ROADMAP.md`** — all phases (0.2 through 0.5) marked as shipped; 1.0 RC marked
+  as current.
+- **`README.md`** — full rewrite reflecting the complete feature set: state tracking,
+  all CLI commands, `AutoFactory`, `Trait`, `@post_generation`, helpers, pytest
+  integration, and SemVer commitment.
+- **`docs/`** — all existing pages updated to cover features added in 0.2–0.5:
+  - `index.md`: complete feature table, updated quickstart.
+  - `seeders.md`: `tags` class variable, `before_run`/`after_run`/`on_error` hooks.
+  - `runner.md`: constructor parameters, `run()` / `fresh()` / `list_seeders()` tag
+    and state-tracking kwargs, transactional mode, lifecycle hooks.
+  - `cli.md`: all commands and flags, including `status`, `validate`, `graph`,
+    `restore`, `init`, `make:seeder`, `make:factory`, `--new-only`, `--force`,
+    `--max-parallel`, `--tag`, `--quiet`, `--verbose`, and updated production guard.
+  - `configuration.md`: `state_tracking` option documented.
+
+---
+
+## What's new since 0.1
+
+sqlalchemy-seedling started as a thin async wrapper around the core SQLAlchemy
+seeding pattern and has grown into a full seeder + factory platform.
+
+**0.2 — Foundations:** structured logging via `structlog` with a per-run UUID,
+dialect helpers (`truncate_tables`, `reset_sequences`, `deferred_constraints`),
+MySQL/MariaDB upsert, `seed list` output flags, a CI matrix with PostgreSQL and
+MariaDB, and the Rich CLI visual overhaul.
+
+**0.3 — State tracking:** a `seedling_state` table (auto-created, append-only,
+similar to Alembic's `alembic_version`) that records every seeder execution with
+start/finish timestamps, status, error, and a SHA-256 content hash of the seeder's
+`run()` source. New commands: `seed status`, `seed validate`, `seed graph`. New flags:
+`--new-only`, `--force`, `--max-parallel`. Seeder and runner lifecycle hooks. Transactional
+mode (`SeederRunner(transactional=True)`) for test isolation.
+
+**0.4 — Factory power:** `AutoFactory[T]` with mapper introspection and name-based
+smart defaults; factory registry; declarative `Trait` classes (replacing `as_trait()`);
+async-first `@post_generation` hooks; `RelatedFactory` / `RelatedFactoryList`;
+`SelfAttribute`, `Iterator`, `Faker`, `Skip` descriptors; `build_dict()`, bulk insert
+path (`bulk=True`), `reset_sequence()`, and `seed()` for deterministic faker output.
+
+**0.5 — Scaffolding and fixtures:** `seed init`, `seed make:seeder`, `seed make:factory`
+(uses AutoFactory introspection), `seed restore`, optional YAML support, tag-based
+filtering (`tags` on `Seeder`, `--tag` on CLI), and the `seedling_transactional_session`
+pytest fixture.
+
+**1.0 RC:** API freeze, docs rewrite, migration guide from factory_boy, cookbook,
+example apps, benchmarks, and the SemVer stability commitment.
+
+---
+
 ## [0.5.0] - 2026-05-02
 
 ### Added

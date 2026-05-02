@@ -83,4 +83,15 @@ jobs:
         env:
           SEEDLING_TEST_PG_URL: postgresql+asyncpg://seedling:seedling@localhost:5432/seedling_test
           SEEDLING_TEST_MARIADB_URL: mysql+asyncmy://seedling:seedling@localhost:3306/seedling_test
-        run: uv run pytest
+        run: uv run pytest --cov=seedling --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

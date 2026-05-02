@@ -6,6 +6,8 @@ repo_name: arthurvasconcelos/seedling
 
 theme:
   name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.png
   palette:
     - scheme: default
       primary: green
@@ -23,6 +25,15 @@ theme:
     - navigation.sections
     - navigation.top
     - content.code.copy
+    - search.highlight
+    - search.suggest
+
+extra:
+  version:
+    provider: mike
+
+plugins:
+  - search
 
 markdown_extensions:
   - admonition
@@ -38,6 +49,9 @@ nav:
   - Getting Started: index.md
   - Seeders: seeders.md
   - Factories: factories.md
+  - State Tracking: state-tracking.md
   - Runner: runner.md
   - CLI Reference: cli.md
   - Configuration: configuration.md
+  - Migrate from factory_boy: migration.md
+  - Cookbook: cookbook.md

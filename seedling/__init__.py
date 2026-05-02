@@ -30,7 +30,8 @@ from seedling.helpers import (
 from seedling.resolver import resolve_with_deps, topological_levels, topological_sort
 from seedling.runner import SeederRunner
 from seedling.seeder import Seeder
-from seedling.state import compute_hash, ensure_state_table, get_latest_states
+
+__version__ = "1.0.0rc1"
 
 __all__ = [
     # Core
@@ -71,8 +72,6 @@ __all__ = [
     "PROD",
     "ALL",
     "DEV_AND_TEST",
-    # State tracking
-    "compute_hash",
-    "ensure_state_table",
-    "get_latest_states",
+    # Version
+    "__version__",
 ]

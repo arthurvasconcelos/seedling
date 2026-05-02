@@ -30,6 +30,7 @@ class UserSeeder(Seeder):
 | `environments` | `set[str]` | `DEV_AND_TEST` | Environments in which this seeder runs |
 | `idempotent` | `bool` | `True` | Whether `upsert()` uses `on_conflict_do_nothing` |
 | `models` | `list[Any]` | `[]` | ORM model classes seeded here (used by `seed export`) |
+| `tags` | `set[str]` | `set()` | Arbitrary labels for tag-based filtering |
 
 ## Dependency ordering
 
@@ -60,6 +61,28 @@ class ProdSeeder(Seeder):
     environments = {PROD}  # only runs with: seed run --env production
 ```
 
+## Tags
+
+Tag seeders with arbitrary labels for fine-grained filtering:
+
+```python
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+    tags = {"demo", "smoke"}
+
+class HeavySeeder(Seeder):
+    environments = DEV_AND_TEST
+    tags = {"demo"}
+```
+
+```bash
+seed run --tag smoke          # only runs UserSeeder (it has the "smoke" tag)
+seed run --tag demo           # runs both
+seed run --tag demo --tag smoke  # union: runs any seeder matching either tag
+```
+
+Tags filter independently from the environment filter — both must pass for a seeder to run.
+
 ## Auto-discovery
 
 Instead of manually registering seeders, call `runner.discover()` with your seeders package:
@@ -69,3 +92,29 @@ runner.discover("myapp.seeders")
 ```
 
 This imports all modules under the package and registers every `Seeder` subclass it finds.
+
+## Lifecycle hooks
+
+Override these async methods to add logic before or after a seeder runs:
+
+```python
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+
+    async def before_run(self, session: AsyncSession) -> None:
+        # Called immediately before run()
+        pass
+
+    async def run(self, session: AsyncSession) -> None:
+        ...
+
+    async def after_run(self, session: AsyncSession) -> None:
+        # Called after a successful run()
+        pass
+
+    async def on_error(self, session: AsyncSession, exc: BaseException) -> None:
+        # Called if run() raises — default is a no-op
+        pass
+```
+
+All hooks are no-ops by default. `on_error` receives the exception but does not suppress it — the runner still re-raises after calling it.
