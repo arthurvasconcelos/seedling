@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from seedling.factory import Factory, LazyAttribute, Sequence, SubFactory
+import pytest
+
+from seedling.factory import Factory, LazyAttribute, Sequence, SubFactory, Trait, _clear_registry, get_factory
 from tests.conftest import Item
 
 
@@ -80,28 +82,76 @@ def test_build_batch_returns_correct_count():
     assert all(isinstance(i, Item) for i in items)
 
 
-# ── as_trait() ─────────────────────────────────────────────────────────────────
+# ── class Trait ────────────────────────────────────────────────────────────────
 
 
-def test_as_trait_overrides_fields():
-    SpecialItem = ItemFactory.as_trait(value=99)
-    item = SpecialItem.build()
+class TraitItemFactory(Factory[Item]):
+    model = Item
+    name = "default-name"
+    value = 42
+
+    class special(Trait):
+        value = 99
+
+    class renamed(Trait):
+        name = "renamed"
+        value = 1
+
+
+def test_trait_overrides_field():
+    item = TraitItemFactory.build(special=True)
     assert item.value == 99
-    assert item.name == "default-name"  # inherited
+    assert item.name == "default-name"
 
 
-def test_as_trait_does_not_mutate_original():
-    ItemFactory.as_trait(value=99)
-    item = ItemFactory.build()
+def test_trait_not_applied_leaves_default():
+    item = TraitItemFactory.build()
     assert item.value == 42
 
 
-def test_as_trait_chaining():
-    Step1 = ItemFactory.as_trait(value=1)
-    Step2 = Step1.as_trait(name="chained")
-    item = Step2.build()
+def test_trait_does_not_mutate_original():
+    TraitItemFactory.build(special=True)
+    item = TraitItemFactory.build()
+    assert item.value == 42
+
+
+def test_trait_stacking_later_wins():
+    # both traits set value; 'renamed' appears later in kwargs → wins
+    item = TraitItemFactory.build(special=True, renamed=True)
     assert item.value == 1
-    assert item.name == "chained"
+    assert item.name == "renamed"
+
+
+def test_trait_explicit_kwarg_beats_trait():
+    item = TraitItemFactory.build(special=True, value=0)
+    assert item.value == 0
+
+
+def test_trait_false_not_applied_and_not_forwarded_to_model():
+    # special=False must not apply the trait AND must not be forwarded to Item()
+    item = TraitItemFactory.build(special=False)
+    assert item.value == 42  # trait not applied
+
+
+def test_trait_inherited_from_parent():
+    class ChildItemFactory(TraitItemFactory):
+        pass
+
+    item = ChildItemFactory.build(special=True)
+    assert item.value == 99
+
+
+def test_trait_lazy_attribute_inside_trait():
+    class LazyTraitFactory(Factory[Item]):
+        model = Item
+        name = "base"
+        value = 0
+
+        class computed(Trait):
+            value = LazyAttribute(lambda f: len(f.get("name", "")) * 10)
+
+    item = LazyTraitFactory.build(computed=True)
+    assert item.value == 40  # len("base") * 10
 
 
 # ── create() ───────────────────────────────────────────────────────────────────
@@ -135,3 +185,96 @@ async def test_create_lazy_attribute(session):
     item = await LazyFactory.create(session)
     # value = len("base") * 10 = 40
     assert item.value == 40
+
+
+# ── factory registry ───────────────────────────────────────────────────────────
+
+
+@pytest.fixture(autouse=False)
+def isolated_registry():
+    """Snapshot and restore the registry around a test to avoid cross-test pollution."""
+    from seedling.factory import _registry
+    snapshot = dict(_registry)
+    yield
+    _registry.clear()
+    _registry.update(snapshot)
+
+
+def test_factory_registers_on_definition(isolated_registry):
+    class RegModel:
+        pass
+
+    class RegFactory(Factory[RegModel]):
+        model = RegModel
+
+    assert get_factory(RegModel) is RegFactory
+
+
+def test_factory_without_model_does_not_register(isolated_registry):
+    class NoModelFactory(Factory[object]):
+        pass
+
+    assert get_factory(object) is None
+
+
+def test_factory_inherited_model_does_not_re_register(isolated_registry):
+    class BaseModel:
+        pass
+
+    class BaseFactory(Factory[BaseModel]):
+        model = BaseModel
+
+    class ChildFactory(BaseFactory):
+        pass
+
+    # ChildFactory inherits model but doesn't declare its own — BaseFactory stays
+    assert get_factory(BaseModel) is BaseFactory
+
+
+def test_later_definition_overwrites_earlier(isolated_registry):
+    class OverModel:
+        pass
+
+    class FirstFactory(Factory[OverModel]):
+        model = OverModel
+
+    class SecondFactory(Factory[OverModel]):
+        model = OverModel
+
+    assert get_factory(OverModel) is SecondFactory
+
+
+def test_get_factory_returns_none_for_unknown_model():
+    class Unknown:
+        pass
+
+    assert get_factory(Unknown) is None
+
+
+def test_trait_inner_class_does_not_pollute_registry(isolated_registry):
+    class TraitModel:
+        pass
+
+    class TraitableFactory(Factory[TraitModel]):
+        model = TraitModel
+
+        class premium(Trait):
+            value = 99
+
+    # The inner Trait class must not be picked up as a Factory registration
+    assert get_factory(TraitModel) is TraitableFactory
+
+
+# ── Trait + create() ───────────────────────────────────────────────────────────
+
+
+async def test_trait_applied_in_create(session):
+    item = await TraitItemFactory.create(session, special=True)
+    assert item.id is not None
+    assert item.value == 99
+    assert item.name == "default-name"
+
+
+async def test_trait_not_applied_in_create(session):
+    item = await TraitItemFactory.create(session)
+    assert item.value == 42

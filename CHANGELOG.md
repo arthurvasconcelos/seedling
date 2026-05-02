@@ -7,6 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-02
+
+### Added
+
+- **`Factory.seed(n)`** — classmethod that seeds the shared `faker` instance and any
+  locale-specific `Faker(...)` descriptor instances declared on the factory's MRO for
+  deterministic output. Call once per test to make faker-generated values reproducible.
+- **`create_batch(..., bulk=True)`** — new keyword argument on `Factory.create_batch()` that
+  uses a single `INSERT ... RETURNING` statement (SQLAlchemy Core ORM DML) instead of N
+  per-row `create()` calls. Significantly faster for large batches. Limitations: `@post_generation`
+  hooks and `RelatedFactory`/`RelatedFactoryList` descriptors do **not** fire; `SubFactory`
+  and auto-resolved FK fields are omitted from the insert dict (supply them as overrides).
+- **`Factory.build_dict(**overrides)`** — same contract as `build()` but returns a plain
+  `dict` instead of an ORM instance. Accepts overrides, trait kwargs, and all descriptors.
+  SubFactory fields are omitted (same as `build()`). Useful for fixtures, assertions, and
+  feeding data to non-ORM code.
+- **`Factory.reset_sequence(value=0)`** — classmethod that resets the `Sequence` counter for
+  the factory to *value* (next build uses *value* as the first sequence number) and also resets
+  all `Iterator` descriptors anywhere in the factory's MRO back to their first element. Typical
+  use: call once per test to get predictable sequence values.
+- **`SelfAttribute(attr_path, default=None)`** — reference a sibling field by name in the
+  same factory call. Dot-notation traverses attributes of the resolved value. Returns
+  `default` when the referenced field is not yet available.
+- **`Iterator(values)`** — cycle through a fixed list of values, advancing by one per
+  instance built. Call `iterator.reset()` to restart the cycle.
+- **`Faker(provider, *args, locale=None, **kwargs)`** — call a `faker` provider by name each
+  time an instance is built. Optional `locale` creates a locale-specific faker instance.
+  Replaces the pattern of wrapping `faker.xxx()` in a `LazyAttribute`.
+- **`Skip`** — singleton sentinel that tells a factory to omit a field entirely. Useful in
+  `AutoFactory` subclasses to suppress a smart default; the caller must then supply the value
+  via an explicit override kwarg.
+- **Factory registry** — every `Factory[T]` subclass that declares `model = ...` on its own body now self-registers in a global registry. `get_factory(ModelClass)` returns the registered factory, or `None`. Used internally by `AutoFactory` for FK resolution; also available as a public API for advanced use.
+- **`AutoFactory[Model]`** — subclass instead of `Factory[T]` to get automatic field defaults
+  from SQLAlchemy mapper introspection. Primary keys are skipped; FK columns resolve via the
+  registry (non-nullable FK with no registered factory raises `AutoFactoryResolutionError` at
+  `create()` time; nullable FK with no registered factory is left unset). Explicitly declared
+  fields always override auto-generated ones.
+  - `class Meta: smart_defaults = True` (default-on) — name-based heuristics: `email` →
+    `faker.email()`, `first_name` → `faker.first_name()`, `phone` → `faker.phone_number()`, etc.
+    Set `smart_defaults = False` to disable.
+- **`AutoFactoryResolutionError`** — new exception raised when `AutoFactory` cannot resolve a
+  non-nullable FK column at `create()` time.
+- **`class Trait` declarative syntax** — define traits as inner classes of a factory that
+  subclass `Trait`. Apply via bool kwargs; multiple traits stack left-to-right, later wins on
+  conflict; explicit kwargs always beat trait fields; `trait_name=False` suppresses the trait
+  without forwarding the kwarg to the model. `LazyAttribute` and other descriptors work inside
+  `Trait` bodies. Traits inherit through the factory MRO.
+
+- **`RelatedFactory(factory, **kwargs)`** — declare as a factory attribute to create one
+  related instance after the main instance is persisted (after `@post_generation` hooks).
+  Callable kwargs receive the parent instance; non-callable kwargs are forwarded as-is.
+  Silently skipped in `build()`. Inherits through the factory MRO.
+- **`RelatedFactoryList(factory, size=1, **kwargs)`** — like `RelatedFactory` but creates
+  *size* related instances. `size=0` is valid and creates nothing.
+- **`@post_generation`** — async-first decorator for post-create hooks. The decorated
+  function receives `(instance, session)` after the instance has been flushed and refreshed.
+  Hooks are silently skipped in `build()`. Multiple hooks on one factory fire in MRO order
+  (base → subclass, declaration order within a class). Child factories inherit parent hooks;
+  a child can override a parent hook by re-declaring a hook with the same name. Sync functions
+  are also accepted and called without `await`.
+
+### Documentation
+
+- `docs/factories.md` — full rewrite covering all Phase 0.4 descriptors, `AutoFactory`,
+  `Trait`, `@post_generation`, `RelatedFactory`/`RelatedFactoryList`, `build_dict()`,
+  bulk insert, `reset_sequence()`, `seed()`, and the factory registry.
+- Migration guide from `as_trait()` to the declarative `Trait` syntax included in
+  `docs/factories.md`.
+
+### Removed
+
+- **`Factory.as_trait()`** *(breaking)* — replaced by the declarative `class Trait` syntax.
+  Migration: move `as_trait(field=val)` call-site logic into an inner `Trait` subclass and
+  apply it via `MyFactory.build(trait_name=True)` / `await MyFactory.create(session, trait_name=True)`.
+
 ## [0.3.0] - 2026-05-02
 
 ### Added

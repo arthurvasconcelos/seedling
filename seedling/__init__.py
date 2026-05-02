@@ -1,6 +1,26 @@
 from seedling.environments import ALL, DEV, DEV_AND_TEST, PROD, TEST
-from seedling.exceptions import CircularDependencyError, MissingDependencyError
-from seedling.factory import Factory, LazyAttribute, Sequence, SubFactory, faker
+from seedling.exceptions import (
+    AutoFactoryResolutionError,
+    CircularDependencyError,
+    MissingDependencyError,
+)
+from seedling.factory import (
+    AutoFactory,
+    Factory,
+    Faker,
+    Iterator,
+    LazyAttribute,
+    RelatedFactory,
+    RelatedFactoryList,
+    SelfAttribute,
+    Sequence,
+    Skip,
+    SubFactory,
+    Trait,
+    faker,
+    get_factory,
+    post_generation,
+)
 from seedling.helpers import (
     deferred_constraints,
     reset_sequences,
@@ -17,11 +37,21 @@ __all__ = [
     "Seeder",
     "SeederRunner",
     # Factory
+    "AutoFactory",
+    "Faker",
     "Factory",
+    "Iterator",
     "LazyAttribute",
+    "RelatedFactory",
+    "RelatedFactoryList",
+    "SelfAttribute",
     "Sequence",
+    "Skip",
     "SubFactory",
+    "Trait",
+    "post_generation",
     "faker",
+    "get_factory",
     # Helpers
     "upsert",
     "truncate_tables",
@@ -32,6 +62,7 @@ __all__ = [
     "topological_sort",
     "resolve_with_deps",
     # Exceptions
+    "AutoFactoryResolutionError",
     "CircularDependencyError",
     "MissingDependencyError",
     # Environment constants
