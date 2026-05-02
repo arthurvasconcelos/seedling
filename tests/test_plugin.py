@@ -63,8 +63,10 @@ async def test_seed_helper_runs_seeder_before_test(session_factory):
     """@seed(UserSeeder) helper runs the seeder before the test body."""
     async with session_factory() as s:
         rows = (
-            await s.execute(select(Item).where(Item.name == "from_seeder"))
-        ).scalars().all()
+            (await s.execute(select(Item).where(Item.name == "from_seeder")))
+            .scalars()
+            .all()
+        )
     assert len(rows) >= 1
     assert rows[0].value == 42
 
@@ -74,8 +76,10 @@ async def test_mark_list_form_runs_seeder(session_factory):
     """@pytest.mark.seed([UserSeeder]) list form also works."""
     async with session_factory() as s:
         rows = (
-            await s.execute(select(Item).where(Item.name == "from_seeder"))
-        ).scalars().all()
+            (await s.execute(select(Item).where(Item.name == "from_seeder")))
+            .scalars()
+            .all()
+        )
     assert len(rows) >= 1
 
 
@@ -83,17 +87,16 @@ async def test_mark_list_form_runs_seeder(session_factory):
 async def test_seed_helper_with_multiple_seeders(session_factory):
     """@seed() with multiple seeders runs all of them."""
     async with session_factory() as s:
-        names = {
-            r.name
-            for r in (await s.execute(select(Item))).scalars().all()
-        }
+        names = {r.name for r in (await s.execute(select(Item))).scalars().all()}
     assert "from_seeder" in names
     assert "from_seeder_2" in names
 
 
 def test_seed_marker_is_registered_in_pytest(pytestconfig):
     # marker entries look like "seed(*seeder_classes): description" — strip to name
-    names = {m.split("(")[0].split(":")[0].strip() for m in pytestconfig.getini("markers")}
+    names = {
+        m.split("(")[0].split(":")[0].strip() for m in pytestconfig.getini("markers")
+    }
     assert "seed" in names
 
 
@@ -124,7 +127,9 @@ async def test_transactional_session_can_add_and_flush(seedling_transactional_se
     session.add(Item(name="transactional_item", value=7))
     await session.flush()
 
-    result = await session.execute(select(Item).where(Item.name == "transactional_item"))
+    result = await session.execute(
+        select(Item).where(Item.name == "transactional_item")
+    )
     row = result.scalar_one()
     assert row.value == 7
 
@@ -146,6 +151,8 @@ async def test_transactional_session_rolled_back_after_use(session_factory):
 
     async with session_factory() as check_session:
         after = (
-            await check_session.execute(select(Item).where(Item.name == "temp_item"))
-        ).scalars().all()
+            (await check_session.execute(select(Item).where(Item.name == "temp_item")))
+            .scalars()
+            .all()
+        )
     assert after == []

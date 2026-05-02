@@ -32,7 +32,7 @@ def test_to_snake_single_word():
 
 
 def _make_pyproject(tmp_path: Path) -> None:
-    (tmp_path / "pyproject.toml").write_text("[project]\nname = \"myapp\"\n")
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "myapp"\n')
 
 
 def test_init_creates_seeders_package(tmp_path, monkeypatch):

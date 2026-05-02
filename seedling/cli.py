@@ -256,7 +256,9 @@ def export_cmd(
 
 @app.command("restore")
 def restore_cmd(
-    file: Annotated[Path, typer.Argument(help="Fixture file to restore (.json or .yaml/.yml)")],
+    file: Annotated[
+        Path, typer.Argument(help="Fixture file to restore (.json or .yaml/.yml)")
+    ],
     env: Annotated[
         str, typer.Option("--env", help="Environment (used to resolve the runner)")
     ] = "development",
@@ -276,9 +278,7 @@ def restore_cmd(
 
     runner = _get_runner(env)
     total = asyncio.run(runner.restore(data))
-    _ok(
-        f"Restored [bold]{total}[/bold] rows from [cyan]{file}[/cyan]"
-    )
+    _ok(f"Restored [bold]{total}[/bold] rows from [cyan]{file}[/cyan]")
 
 
 @app.command("list")
@@ -581,15 +581,15 @@ def create_runner(env: str) -> SeederRunner:
     return runner
 '''
 
-_FACTORIES_INIT = '''\
+_FACTORIES_INIT = """\
 from __future__ import annotations
 
 # Import your factories here so they are registered in the factory registry.
 # Example:
 #   from factories.user import UserFactory
-'''
+"""
 
-_SEEDER_STUB = '''\
+_SEEDER_STUB = """\
 from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -605,9 +605,9 @@ class {name}(Seeder):
 
     async def run(self, session: AsyncSession) -> None:
         pass
-'''
+"""
 
-_FACTORY_STUB = '''\
+_FACTORY_STUB = """\
 from __future__ import annotations
 
 from seedling import AutoFactory
@@ -617,7 +617,7 @@ from {model_module} import {model_name}
 class {factory_name}(AutoFactory[{model_name}]):
     model = {model_name}
 {extra_fields}\
-'''
+"""
 
 
 def _to_snake(name: str) -> str:
@@ -660,7 +660,7 @@ def init_cmd() -> None:
     # [tool.seedling] in pyproject.toml
     raw = pyproject.read_text()
     if "[tool.seedling]" not in raw:
-        raw += "\n[tool.seedling]\nrunner = \"seeders:create_runner\"\n"
+        raw += '\n[tool.seedling]\nrunner = "seeders:create_runner"\n'
         pyproject.write_text(raw)
         created.append("pyproject.toml [tool.seedling]")
     else:
@@ -708,9 +708,7 @@ def make_factory_cmd(
 ) -> None:
     """Generate a factory stub for a SQLAlchemy model."""
     if ":" not in model:
-        _err(
-            "Provide a dotted path: module:ClassName (e.g. myapp.models:User)"
-        )
+        _err("Provide a dotted path: module:ClassName (e.g. myapp.models:User)")
         raise typer.Exit(1)
 
     module_path, model_name = model.rsplit(":", 1)

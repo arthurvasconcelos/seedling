@@ -164,7 +164,7 @@ async def _seedling_seed_marker(
     #   @seed(UserSeeder)               → marker.args = (UserSeeder,)
     #   @pytest.mark.seed([UserSeeder]) → marker.args = ([UserSeeder],)
     args = marker.args
-    if len(args) == 1 and isinstance(args[0], (list, tuple)):
+    if len(args) == 1 and isinstance(args[0], list | tuple):
         seeder_classes: tuple[type, ...] = tuple(args[0])
     else:
         seeder_classes = tuple(args)

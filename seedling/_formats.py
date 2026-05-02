@@ -43,7 +43,9 @@ def load_fixture(path: Path) -> dict[str, list[dict[str, Any]]]:
     else:
         data = json.loads(path.read_text())
     if not isinstance(data, dict):
-        raise ValueError(f"Fixture file must contain a mapping, got {type(data).__name__}")
+        raise ValueError(
+            f"Fixture file must contain a mapping, got {type(data).__name__}"
+        )
     return data
 
 
@@ -51,7 +53,9 @@ def dump_fixture(data: dict[str, list[dict[str, Any]]], path: Path) -> None:
     """Write fixture data to a file. Format is inferred from the file extension."""
     if _is_yaml_path(path):
         yaml = _require_pyyaml()
-        text = yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        text = yaml.dump(
+            data, default_flow_style=False, allow_unicode=True, sort_keys=False
+        )
         path.write_text(text)
     else:
         path.write_text(json.dumps(data, cls=_JsonEncoder, indent=2))
