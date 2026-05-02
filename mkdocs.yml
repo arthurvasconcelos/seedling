@@ -31,6 +31,8 @@ theme:
 extra:
   version:
     provider: mike
+  announce:
+    text: '<b>1.0 RC</b> — feedback wanted. Track it in <a href="https://github.com/arthurvasconcelos/seedling/issues/1">issue #1</a>. Final 1.0 ships ~2026-06-02.'
 
 plugins:
   - search
