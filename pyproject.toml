@@ -13,6 +13,20 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 keywords = ["sqlalchemy", "async", "seeder", "factory", "testing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Framework :: AsyncIO",
+    "Topic :: Database",
+    "Topic :: Software Development :: Testing",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
 dependencies = [
     "sqlalchemy[asyncio]>=2.0",
     "structlog>=24.0",
@@ -20,6 +34,12 @@ dependencies = [
     "rich>=13",
     "faker>=20",
 ]
+
+[project.urls]
+Homepage = "https://arthurvasconcelos.github.io/seedling"
+Repository = "https://github.com/arthurvasconcelos/seedling"
+Changelog = "https://github.com/arthurvasconcelos/seedling/blob/main/CHANGELOG.md"
+Issues = "https://github.com/arthurvasconcelos/seedling/issues"
 
 [project.optional-dependencies]
 yaml = ["PyYAML>=6.0"]
