@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777755089267,
+  "lastUpdate": 1777755608095,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -43,6 +43,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.6578,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "db9f4ff5fbc79a37bf60b282fbeb108da613ebc6",
+          "message": "chore: add PyPI classifiers and project URLs",
+          "timestamp": "2026-05-02T22:59:47+02:00",
+          "tree_id": "21a92e0ef17a48adf9728c76e1e27c7928970e8e",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/db9f4ff5fbc79a37bf60b282fbeb108da613ebc6"
+        },
+        "date": 1777755607045,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.1648,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1154,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.5866,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.676,
             "unit": "seconds"
           }
         ]
