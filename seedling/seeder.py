@@ -26,5 +26,13 @@ class Seeder:
         raise NotImplementedError
 
     async def truncate(self, session: AsyncSession) -> None:
-        # Default no-op. Override to customise truncation (e.g. CASCADE).
+        pass
+
+    async def before_run(self, session: AsyncSession) -> None:
+        pass
+
+    async def after_run(self, session: AsyncSession) -> None:
+        pass
+
+    async def on_error(self, session: AsyncSession, exc: BaseException) -> None:
         pass

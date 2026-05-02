@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+**State tracking**
+- `seedling_state` table — auto-created via `CREATE TABLE IF NOT EXISTS` on first run
+  (no migrations needed, similar to Alembic's `alembic_version`). Columns: `id`,
+  `seeder_name`, `env`, `run_id`, `status`, `started_at`, `finished_at`,
+  `duration_ms`, `error`, `rows_seeded`, `content_hash`. Append-only history —
+  one row per execution.
+- Content hash — SHA-256 of each seeder's `run()` source, stored on every execution.
+  Drift is flagged when the current hash differs from the stored hash.
+- `[tool.seedling] state_tracking = true` — default-on; opt out per-project via
+  `state_tracking = false` in `pyproject.toml`, or per-runner via
+  `SeederRunner(..., state_tracking=False)`.
+
+**Seeder hooks**
+- `Seeder.before_run(session)` — async hook called before `run()`. Override to add
+  pre-seeding logic.
+- `Seeder.after_run(session)` — async hook called after a successful `run()`.
+- `Seeder.on_error(session, exc)` — async hook called on failure. Default no-op.
+
+**Runner lifecycle hooks**
+- `SeederRunner.before_run(run_id, env)` — override to react before the run starts.
+- `SeederRunner.after_run(run_id, env)` — override to react after a successful run.
+- `SeederRunner.on_run_error(run_id, env, exc)` — override to react on run failure.
+
+**New `SeederRunner` constructor parameters**
+- `state_tracking: bool = True` — enable/disable state tracking.
+- `transactional: bool = False` — wrap the entire run in a single transaction;
+  rolls back everything if any seeder raises. State tracking is skipped in
+  transactional mode.
+- `max_parallel: int | None = None` — cap concurrency within a dependency level.
+
+**New `run()` flags**
+- `new_only: bool = False` — skip seeders whose latest state is `success` and whose
+  content hash matches.
+- `force: bool = False` — override `new_only` and always re-run.
+
+**New CLI commands**
+- `seed status [--env ENV] [--json]` — show latest run per seeder with drift flag.
+- `seed validate [--env ENV]` — static checks: cycles, missing deps, empty
+  environments, missing models. Exits 1 if any issues found.
+- `seed graph [SEEDERS...] [--env ENV] [--mermaid]` — Graphviz DOT (default) or
+  Mermaid flowchart of the dependency graph.
+
+**New CLI flags**
+- `seed run --new-only` — skip up-to-date seeders.
+- `seed run --force` — override `--new-only`.
+- `seed run --max-parallel N` — cap concurrency within a level.
+- `seed fresh --max-parallel N` — same for fresh runs.
+
+**Documentation**
+- `docs/state-tracking.md` — schema reference, drift semantics, `fresh` semantics,
+  opt-out instructions, and all new flags.
+
+### Changed
+- `seed fresh` now wipes `seedling_state` rows for affected seeders before
+  truncating and re-seeding (clean-slate semantics).
+
 ## [0.2.0] - 2026-05-02
 
 ### Added

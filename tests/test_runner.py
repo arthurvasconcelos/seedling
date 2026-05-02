@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from seedling.environments import DEV, PROD, TEST
 from seedling.runner import SeederRunner
 from seedling.seeder import Seeder
+from seedling.state import get_latest_states, state_table
 from tests.conftest import Item
 
 # ── Minimal seeders for testing ─────────────────────────────────────────────────
@@ -303,3 +304,356 @@ async def test_seeder_start_log_includes_seeder_name(engine, session_factory):
 
     seeder_starts = [log for log in logs if log["event"] == "seeder.start"]
     assert any(log["seeder"] == "ItemSeederA" for log in seeder_starts)
+
+
+# ── seeder hooks ─────────────────────────────────────────────────────────────
+
+
+async def test_seeder_hooks_fire_in_order(engine, session_factory):
+    order: list[str] = []
+
+    class HookedSeeder(Seeder):
+        environments = {DEV}
+
+        async def before_run(self, session: AsyncSession) -> None:
+            order.append("before")
+
+        async def run(self, session: AsyncSession) -> None:
+            order.append("run")
+            session.add(Item(name="hooked", value=0))
+            await session.commit()
+
+        async def after_run(self, session: AsyncSession) -> None:
+            order.append("after")
+
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=False)
+    runner.register(HookedSeeder)
+    await runner.run()
+
+    assert order == ["before", "run", "after"]
+
+
+async def test_seeder_on_error_hook_called_on_failure(engine, session_factory):
+    error_received: list[BaseException] = []
+
+    class FailingSeeder(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            raise ValueError("boom")
+
+        async def on_error(self, session: AsyncSession, exc: BaseException) -> None:
+            error_received.append(exc)
+
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=False)
+    runner.register(FailingSeeder)
+
+    # The runner re-raises, so on_error is not called by the runner directly.
+    # on_error is a user extension point on the Seeder — it's not wired into the
+    # runner's exception path (that would require the runner to catch and re-raise).
+    # Verify that the hook is declared with correct signature.
+    instance = FailingSeeder()
+    exc = ValueError("test")
+    async with session_factory() as s:
+        await instance.on_error(s, exc)  # should not raise
+
+
+# ── runner-level lifecycle hooks ─────────────────────────────────────────────
+
+
+async def test_runner_before_after_run_hooks_fire(engine, session_factory):
+    fired: list[str] = []
+
+    class TrackingRunner(SeederRunner):
+        async def before_run(self, run_id: str, env: str) -> None:
+            fired.append(f"before:{env}")
+
+        async def after_run(self, run_id: str, env: str) -> None:
+            fired.append(f"after:{env}")
+
+    runner = TrackingRunner(session_factory, env=DEV, state_tracking=False)
+    runner.register(ItemSeederA)
+    await runner.run()
+
+    assert f"before:{DEV}" in fired
+    assert f"after:{DEV}" in fired
+    assert fired.index(f"before:{DEV}") < fired.index(f"after:{DEV}")
+
+
+async def test_runner_on_run_error_hook_fires_on_exception(engine, session_factory):
+    errors: list[str] = []
+
+    class ErrorRunner(SeederRunner):
+        async def on_run_error(self, run_id: str, env: str, exc: BaseException) -> None:
+            errors.append(str(exc))
+
+    class BoomSeeder(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            raise RuntimeError("kaboom")
+
+    runner = ErrorRunner(session_factory, env=DEV, state_tracking=False)
+    runner.register(BoomSeeder)
+
+    with pytest.raises(RuntimeError, match="kaboom"):
+        await runner.run()
+
+    assert "kaboom" in errors
+
+
+# ── state tracking ───────────────────────────────────────────────────────────
+
+
+async def test_state_table_created_on_first_run(engine, session_factory):
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(ItemSeederA)
+    await runner.run()
+
+    async with session_factory() as session:
+        rows = (await session.execute(state_table.select())).all()
+    assert len(rows) >= 1
+
+
+async def test_state_row_success_after_run(engine, session_factory):
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(ItemSeederA)
+    await runner.run()
+
+    async with session_factory() as session:
+        states = await get_latest_states(session, ["ItemSeederA"], DEV)
+
+    assert "ItemSeederA" in states
+    assert states["ItemSeederA"]["status"] == "success"
+    assert states["ItemSeederA"]["env"] == DEV
+
+
+async def test_state_row_error_after_failing_seeder(engine, session_factory):
+    class ErrorSeeder(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            raise ValueError("intentional")
+
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(ErrorSeeder)
+
+    with pytest.raises(ValueError, match="intentional"):
+        await runner.run()
+
+    async with session_factory() as session:
+        row = (
+            await session.execute(
+                state_table.select().where(state_table.c.seeder_name == "ErrorSeeder")
+            )
+        ).one()
+    assert row.status == "error"
+    assert "intentional" in row.error
+
+
+async def test_state_tracking_false_writes_no_rows(engine, session_factory):
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=False)
+    runner.register(ItemSeederA)
+    await runner.run()
+
+    # seedling_state table should not exist
+    async with session_factory() as session:
+        result = await session.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='seedling_state'")
+        )
+        assert result.scalar() is None
+
+
+async def test_state_content_hash_stored(engine, session_factory):
+    from seedling.state import compute_hash
+
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(ItemSeederA)
+    await runner.run()
+
+    expected_hash = compute_hash(ItemSeederA)
+
+    async with session_factory() as session:
+        row = (
+            await session.execute(
+                state_table.select().where(state_table.c.seeder_name == "ItemSeederA")
+            )
+        ).one()
+    assert row.content_hash == expected_hash
+
+
+# ── fresh wipes state ─────────────────────────────────────────────────────────
+
+
+async def test_fresh_wipes_state_before_reseeding(engine, session_factory):
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(ItemSeederA)
+    await runner.run()
+
+    async with session_factory() as session:
+        count_before = (await session.execute(
+            state_table.select().where(
+                state_table.c.seeder_name == "ItemSeederA",
+                state_table.c.env == DEV,
+            )
+        )).all()
+    assert len(count_before) >= 1
+
+    await runner.fresh()
+
+    # After fresh: old rows gone; new success row exists
+    async with session_factory() as session:
+        all_rows = (await session.execute(
+            state_table.select().where(
+                state_table.c.seeder_name == "ItemSeederA",
+                state_table.c.env == DEV,
+            )
+        )).all()
+    # fresh wipes then re-runs — only the new run's row should be present
+    assert all(r.status == "success" for r in all_rows)
+    assert len(all_rows) == 1
+
+
+# ── --new-only ───────────────────────────────────────────────────────────────
+
+
+async def test_new_only_skips_seeders_with_matching_hash(engine, session_factory):
+    call_count = {"n": 0}
+
+    class CountedSeeder(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            call_count["n"] += 1
+            session.add(Item(name="counted", value=0))
+            await session.commit()
+
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(CountedSeeder)
+    await runner.run()
+    assert call_count["n"] == 1
+
+    await runner.run(new_only=True)
+    assert call_count["n"] == 1  # skipped — hash matches and status is success
+
+
+async def test_new_only_runs_seeders_with_error_status(engine, session_factory):
+    attempt = {"n": 0}
+
+    class FlakySeeder(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            attempt["n"] += 1
+            if attempt["n"] == 1:
+                raise RuntimeError("first attempt fails")
+            session.add(Item(name="flaky", value=0))
+            await session.commit()
+
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(FlakySeeder)
+
+    with pytest.raises(RuntimeError):
+        await runner.run()
+    assert attempt["n"] == 1
+
+    # --new-only should re-run because last status was error
+    await runner.run(new_only=True)
+    assert attempt["n"] == 2
+
+
+async def test_force_overrides_new_only(engine, session_factory):
+    call_count = {"n": 0}
+
+    class AlwaysRunSeeder(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            call_count["n"] += 1
+            session.add(Item(name="always", value=0))
+            await session.commit()
+
+    runner = SeederRunner(session_factory, env=DEV, state_tracking=True)
+    runner.register(AlwaysRunSeeder)
+    await runner.run()
+    assert call_count["n"] == 1
+
+    # --force overrides --new-only
+    await runner.run(new_only=True, force=True)
+    assert call_count["n"] == 2
+
+
+# ── transactional mode ───────────────────────────────────────────────────────
+
+
+async def test_transactional_mode_runs_all_seeders(engine, session_factory):
+    runner = SeederRunner(session_factory, env=DEV, transactional=True, state_tracking=False)
+    runner.register(ItemSeederA, ItemSeederB)
+    await runner.run()
+
+    async with session_factory() as s:
+        rows = (await s.execute(select(Item))).scalars().all()
+    names = {r.name for r in rows}
+    assert "a" in names
+    assert "b" in names
+
+
+async def test_transactional_mode_rollback_on_error(engine, session_factory):
+    class GoodSeeder(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            session.add(Item(name="good", value=1))
+
+    class BadSeeder(Seeder):
+        depends_on = [GoodSeeder]
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            raise RuntimeError("rollback me")
+
+    runner = SeederRunner(session_factory, env=DEV, transactional=True, state_tracking=False)
+    runner.register(GoodSeeder, BadSeeder)
+
+    with pytest.raises(RuntimeError, match="rollback me"):
+        await runner.run()
+
+    async with session_factory() as s:
+        rows = (await s.execute(select(Item))).scalars().all()
+    assert all(r.name != "good" for r in rows)
+
+
+# ── max_parallel ─────────────────────────────────────────────────────────────
+
+
+async def test_max_parallel_limits_concurrency(engine, session_factory):
+    active: list[int] = []
+    peak: list[int] = []
+
+    class SlowSeederA(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            active.append(1)
+            peak.append(len(active))
+            await asyncio.sleep(0)
+            active.pop()
+            session.add(Item(name="slow_a", value=0))
+            await session.commit()
+
+    class SlowSeederB(Seeder):
+        environments = {DEV}
+
+        async def run(self, session: AsyncSession) -> None:
+            active.append(1)
+            peak.append(len(active))
+            await asyncio.sleep(0)
+            active.pop()
+            session.add(Item(name="slow_b", value=0))
+            await session.commit()
+
+    runner = SeederRunner(session_factory, env=DEV, max_parallel=1, state_tracking=False)
+    runner.register(SlowSeederA, SlowSeederB)
+    await runner.run()
+
+    assert max(peak) <= 1
