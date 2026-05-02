@@ -459,7 +459,9 @@ async def test_state_tracking_false_writes_no_rows(engine, session_factory):
     # seedling_state table should not exist
     async with session_factory() as session:
         result = await session.execute(
-            text("SELECT name FROM sqlite_master WHERE type='table' AND name='seedling_state'")
+            text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='seedling_state'"
+            )
         )
         assert result.scalar() is None
 
@@ -491,24 +493,28 @@ async def test_fresh_wipes_state_before_reseeding(engine, session_factory):
     await runner.run()
 
     async with session_factory() as session:
-        count_before = (await session.execute(
-            state_table.select().where(
-                state_table.c.seeder_name == "ItemSeederA",
-                state_table.c.env == DEV,
+        count_before = (
+            await session.execute(
+                state_table.select().where(
+                    state_table.c.seeder_name == "ItemSeederA",
+                    state_table.c.env == DEV,
+                )
             )
-        )).all()
+        ).all()
     assert len(count_before) >= 1
 
     await runner.fresh()
 
     # After fresh: old rows gone; new success row exists
     async with session_factory() as session:
-        all_rows = (await session.execute(
-            state_table.select().where(
-                state_table.c.seeder_name == "ItemSeederA",
-                state_table.c.env == DEV,
+        all_rows = (
+            await session.execute(
+                state_table.select().where(
+                    state_table.c.seeder_name == "ItemSeederA",
+                    state_table.c.env == DEV,
+                )
             )
-        )).all()
+        ).all()
     # fresh wipes then re-runs — only the new run's row should be present
     assert all(r.status == "success" for r in all_rows)
     assert len(all_rows) == 1
@@ -587,7 +593,9 @@ async def test_force_overrides_new_only(engine, session_factory):
 
 
 async def test_transactional_mode_runs_all_seeders(engine, session_factory):
-    runner = SeederRunner(session_factory, env=DEV, transactional=True, state_tracking=False)
+    runner = SeederRunner(
+        session_factory, env=DEV, transactional=True, state_tracking=False
+    )
     runner.register(ItemSeederA, ItemSeederB)
     await runner.run()
 
@@ -612,7 +620,9 @@ async def test_transactional_mode_rollback_on_error(engine, session_factory):
         async def run(self, session: AsyncSession) -> None:
             raise RuntimeError("rollback me")
 
-    runner = SeederRunner(session_factory, env=DEV, transactional=True, state_tracking=False)
+    runner = SeederRunner(
+        session_factory, env=DEV, transactional=True, state_tracking=False
+    )
     runner.register(GoodSeeder, BadSeeder)
 
     with pytest.raises(RuntimeError, match="rollback me"):
@@ -652,7 +662,9 @@ async def test_max_parallel_limits_concurrency(engine, session_factory):
             session.add(Item(name="slow_b", value=0))
             await session.commit()
 
-    runner = SeederRunner(session_factory, env=DEV, max_parallel=1, state_tracking=False)
+    runner = SeederRunner(
+        session_factory, env=DEV, max_parallel=1, state_tracking=False
+    )
     runner.register(SlowSeederA, SlowSeederB)
     await runner.run()
 

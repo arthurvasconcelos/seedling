@@ -36,7 +36,11 @@ async def state_session(session_factory):
 async def test_ensure_state_table_creates_table(session_factory):
     async with session_factory() as session:
         await ensure_state_table(session)
-        result = await session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='seedling_state'"))
+        result = await session.execute(
+            text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='seedling_state'"
+            )
+        )
         assert result.scalar() == "seedling_state"
 
 
@@ -309,4 +313,6 @@ async def test_delete_states_only_deletes_matching_env(state_session):
 
 
 async def test_delete_states_empty_names_is_noop(state_session):
-    await delete_states_for_seeders(state_session, [], "development")  # should not raise
+    await delete_states_for_seeders(
+        state_session, [], "development"
+    )  # should not raise

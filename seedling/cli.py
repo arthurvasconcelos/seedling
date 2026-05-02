@@ -141,7 +141,9 @@ def run_cmd(
     ] = "development",
     new_only: Annotated[
         bool,
-        typer.Option("--new-only", help="Skip seeders whose hash matches the latest success"),
+        typer.Option(
+            "--new-only", help="Skip seeders whose hash matches the latest success"
+        ),
     ] = False,
     force: Annotated[
         bool,
@@ -149,7 +151,9 @@ def run_cmd(
     ] = False,
     max_parallel: Annotated[
         int | None,
-        typer.Option("--max-parallel", help="Cap concurrency within a dependency level"),
+        typer.Option(
+            "--max-parallel", help="Cap concurrency within a dependency level"
+        ),
     ] = None,
 ) -> None:
     """Run seeders in dependency order."""
@@ -179,7 +183,9 @@ def fresh_cmd(
     ] = "development",
     max_parallel: Annotated[
         int | None,
-        typer.Option("--max-parallel", help="Cap concurrency within a dependency level"),
+        typer.Option(
+            "--max-parallel", help="Cap concurrency within a dependency level"
+        ),
     ] = None,
 ) -> None:
     """Truncate affected tables then run seeders."""
@@ -316,9 +322,7 @@ def status_cmd(
     env: Annotated[
         str, typer.Option("--env", help="Environment to query")
     ] = "development",
-    json_output: Annotated[
-        bool, typer.Option("--json", help="Output as JSON")
-    ] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
 ) -> None:
     """Show the latest run per seeder with drift detection."""
     runner = _get_runner(env)
@@ -331,7 +335,9 @@ def status_cmd(
     async def _fetch() -> dict[str, Any]:
         async with runner._session_factory() as session:
             await ensure_state_table(session)
-            return await get_latest_states(session, [cls.__name__ for cls in ordered], env)
+            return await get_latest_states(
+                session, [cls.__name__ for cls in ordered], env
+            )
 
     latest = asyncio.run(_fetch())
 
@@ -349,7 +355,9 @@ def status_cmd(
                 {
                     "name": cls.__name__,
                     "status": entry["status"] if entry else None,
-                    "started_at": entry["started_at"].isoformat() if entry and entry["started_at"] else None,
+                    "started_at": entry["started_at"].isoformat()
+                    if entry and entry["started_at"]
+                    else None,
                     "duration_ms": entry["duration_ms"] if entry else None,
                     "drift": drift,
                     "run_id": entry["run_id"] if entry else None,
@@ -359,9 +367,7 @@ def status_cmd(
         return
 
     console = Console(highlight=False)
-    console.print(
-        f"\n[bold]Seeder status[/bold]  [dim]{env}[/dim]"
-    )
+    console.print(f"\n[bold]Seeder status[/bold]  [dim]{env}[/dim]")
 
     table = Table(
         box=box.SIMPLE_HEAD, show_header=True, header_style="bold", padding=(0, 1)
@@ -454,7 +460,9 @@ def validate_cmd(
             console.print(f"  [red]✗[/red]  {issue}")
         raise typer.Exit(1)
 
-    console.print(f"\n[bold green]✓[/bold green]  All checks passed for env=[cyan]{env}[/cyan]")
+    console.print(
+        f"\n[bold green]✓[/bold green]  All checks passed for env=[cyan]{env}[/cyan]"
+    )
 
 
 @app.command("graph")
@@ -465,7 +473,9 @@ def graph_cmd(
     ] = "development",
     mermaid: Annotated[
         bool,
-        typer.Option("--mermaid", help="Output Mermaid flowchart instead of Graphviz DOT"),
+        typer.Option(
+            "--mermaid", help="Output Mermaid flowchart instead of Graphviz DOT"
+        ),
     ] = False,
 ) -> None:
     """Output the dependency graph as Graphviz DOT (default) or Mermaid."""

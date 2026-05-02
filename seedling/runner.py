@@ -143,7 +143,11 @@ class SeederRunner:
             on_start(seeder_cls.__name__)
 
         row_id: int | None = None
-        content_hash = compute_hash(seeder_cls) if self._state_tracking and shared_session is None else None
+        content_hash = (
+            compute_hash(seeder_cls)
+            if self._state_tracking and shared_session is None
+            else None
+        )
 
         started_at = datetime.now(UTC)
         try:
@@ -210,9 +214,7 @@ class SeederRunner:
         async with self._session_factory() as session:
             await ensure_state_table(session)
 
-    async def _compute_skip_set(
-        self, levels: list[list[type[Seeder]]]
-    ) -> set[str]:
+    async def _compute_skip_set(self, levels: list[list[type[Seeder]]]) -> set[str]:
         all_names = [cls.__name__ for level in levels for cls in level]
         async with self._session_factory() as session:
             latest = await get_latest_states(session, all_names, self._env)
@@ -245,10 +247,16 @@ class SeederRunner:
         await self.before_run(run_id, self._env)
         try:
             if self._transactional:
-                await self._run_transactional(levels, log, run_id, on_seeder_start, on_seeder_finish)
+                await self._run_transactional(
+                    levels, log, run_id, on_seeder_start, on_seeder_finish
+                )
             else:
                 await self._run_normal(
-                    levels, log, run_id, on_seeder_start, on_seeder_finish,
+                    levels,
+                    log,
+                    run_id,
+                    on_seeder_start,
+                    on_seeder_finish,
                     new_only=new_only and not force,
                 )
         except Exception as exc:
@@ -268,7 +276,9 @@ class SeederRunner:
         *,
         new_only: bool = False,
     ) -> None:
-        semaphore = asyncio.Semaphore(self._max_parallel) if self._max_parallel else None
+        semaphore = (
+            asyncio.Semaphore(self._max_parallel) if self._max_parallel else None
+        )
 
         if self._state_tracking:
             await self._ensure_state_table_once()
@@ -308,7 +318,9 @@ class SeederRunner:
                 wrapped = _NoCommitSession(shared_session)
                 for level in levels:
                     for cls in level:
-                        await self._run_one(cls, log, run_id, on_start, on_finish, wrapped)  # type: ignore[arg-type]
+                        await self._run_one(
+                            cls, log, run_id, on_start, on_finish, wrapped
+                        )  # type: ignore[arg-type]
 
     async def fresh(
         self,
