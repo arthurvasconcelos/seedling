@@ -6,7 +6,7 @@ import pkgutil
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import structlog
 from sqlalchemy import inspect as sa_inspect
@@ -319,8 +319,13 @@ class SeederRunner:
                 for level in levels:
                     for cls in level:
                         await self._run_one(
-                            cls, log, run_id, on_start, on_finish, wrapped
-                        )  # type: ignore[arg-type]
+                            cls,
+                            log,
+                            run_id,
+                            on_start,
+                            on_finish,
+                            cast(AsyncSession, wrapped),
+                        )
 
     async def fresh(
         self,
