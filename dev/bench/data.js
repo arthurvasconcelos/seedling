@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777755767836,
+  "lastUpdate": 1778600951155,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -131,6 +131,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.7444,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7fc5efde6a7c91226d95faa45bd3e71fa97fdd58",
+          "message": "Merge pull request #3 from arthurvasconcelos/dependabot/uv/uv-c30c77f42d\n\nchore(deps): bump urllib3 from 2.6.3 to 2.7.0 in the uv group across 1 directory",
+          "timestamp": "2026-05-12T17:48:49+02:00",
+          "tree_id": "bc81175ceaaf5d6be612824ba4145494aee3f7aa",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/7fc5efde6a7c91226d95faa45bd3e71fa97fdd58"
+        },
+        "date": 1778600950513,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.172,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.12,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.606,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.6714,
             "unit": "seconds"
           }
         ]
