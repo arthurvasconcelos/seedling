@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779736365243,
+  "lastUpdate": 1779736764928,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -219,6 +219,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.4696,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "e8bba06fdf36492c4506dbd54c59b1ec3413f3bd",
+          "message": "fix: prevent uv.lock mutation in benchmark CI job\n\nuv sync and uv run both rewrite uv.lock when they detect staleness,\nwhich blocked github-action-benchmark from switching to gh-pages.\nAdd --frozen to both commands so the lockfile is never touched.",
+          "timestamp": "2026-05-25T21:16:18+02:00",
+          "tree_id": "5a650f6d85be9df78f31c407e57e5da00ed35609",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/e8bba06fdf36492c4506dbd54c59b1ec3413f3bd"
+        },
+        "date": 1779736764414,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.0718,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1016,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.5583,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.6267,
             "unit": "seconds"
           }
         ]
