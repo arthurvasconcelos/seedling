@@ -34,13 +34,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Get version
         id: version
@@ -52,7 +54,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build versioned docs
-        run: npm run docs:build
+        run: pnpm docs:build
         env:
           DOCS_BASE: /seedling/v${{ steps.version.outputs.VERSION }}/
 
@@ -60,7 +62,7 @@ jobs:
         run: cp -r docs/.vitepress/dist /tmp/dist-versioned
 
       - name: Build latest docs
-        run: npm run docs:build
+        run: pnpm docs:build
         env:
           DOCS_BASE: /seedling/latest/
 

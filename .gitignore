@@ -11,5 +11,6 @@ build/
 htmlcov/
 .coverage
 node_modules/
+package-lock.json
 docs/.vitepress/cache/
 docs/.vitepress/dist/

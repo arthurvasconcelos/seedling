@@ -29,7 +29,7 @@ smoke:
 
 # Serve docs locally (requires: npm install)
 docs:
-    npm run docs:dev
+    pnpm docs:dev
 
 # Show the resolved seed execution order for the smoke app (requires a pyproject.toml runner)
 list-smoke:
