@@ -112,14 +112,11 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: uv sync --group dev
-
-      - name: Install aiosqlite
-        run: uv add aiosqlite --dev
+        run: uv sync --frozen --group dev
 
       - name: Collect benchmark results
         run: |
-          uv run python -c "
+          uv run --frozen python -c "
           import asyncio, json, sys
           import structlog
           structlog.configure(logger_factory=structlog.PrintLoggerFactory(file=sys.stderr))
