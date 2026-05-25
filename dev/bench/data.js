@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779740418059,
+  "lastUpdate": 1779741018976,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -483,6 +483,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.6199,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "091e8b4a56514cf729995c38e27cdd2b978fa78e",
+          "message": "chore: split home page — hero+features only, Getting Started own page, add footer",
+          "timestamp": "2026-05-25T22:29:59+02:00",
+          "tree_id": "4e0ad387ba85052e7b234cd7b96271e30012c79b",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/091e8b4a56514cf729995c38e27cdd2b978fa78e"
+        },
+        "date": 1779741017593,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.0636,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.0916,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.5511,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.5995,
             "unit": "seconds"
           }
         ]
