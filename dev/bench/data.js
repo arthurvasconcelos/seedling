@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778600951155,
+  "lastUpdate": 1779736365243,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -175,6 +175,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.6714,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "1a495772e056a166b586d8e758b2e01dda1de04b",
+          "message": "fix: add --frozen to uv run in benchmark job to prevent uv.lock mutation",
+          "timestamp": "2026-05-25T21:12:29+02:00",
+          "tree_id": "5a650f6d85be9df78f31c407e57e5da00ed35609",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/1a495772e056a166b586d8e758b2e01dda1de04b"
+        },
+        "date": 1779736364690,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.814,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.0792,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.4342,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.4696,
             "unit": "seconds"
           }
         ]
