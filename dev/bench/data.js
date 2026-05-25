@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779739581445,
+  "lastUpdate": 1779739944791,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -351,6 +351,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.6966,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "6ffd64e371ca0cc22e5e499ddda9bc2038373574",
+          "message": "chore: migrate docs tooling from npm to pnpm 11",
+          "timestamp": "2026-05-25T22:12:04+02:00",
+          "tree_id": "ba1ef56baa3d339b5097bcebb6e17f0bacdee750",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/6ffd64e371ca0cc22e5e499ddda9bc2038373574"
+        },
+        "date": 1779739943572,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.11,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1197,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.6282,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.7112,
             "unit": "seconds"
           }
         ]
