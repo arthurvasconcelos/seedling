@@ -1,0 +1,1 @@
+import{c as e,Q as a,j as i,m as n}from"./chunks/framework.DEPoDpSh.js";const k=JSON.parse('{"title":"CLI Reference","description":"","frontmatter":{},"headers":[],"relativePath":"cli.md","filePath":"cli.md"}'),t={name:"cli.md"};function d(l,s,r,p,h,o){return a(),i("div",null,[...s[0]||(s[0]=[n("",82)])])}const u=e(t,[["render",d]]);export{k as __pageData,u as default};

@@ -1,0 +1,1 @@
+import{c as i,Q as a,j as n,m as e}from"./chunks/framework.DEPoDpSh.js";const c=JSON.parse('{"title":"Cookbook","description":"","frontmatter":{},"headers":[],"relativePath":"cookbook.md","filePath":"cookbook.md"}'),l={name:"cookbook.md"};function p(h,s,t,k,r,d){return a(),n("div",null,[...s[0]||(s[0]=[e("",59)])])}const o=i(l,[["render",p]]);export{c as __pageData,o as default};
