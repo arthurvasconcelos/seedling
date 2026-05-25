@@ -5,11 +5,13 @@ on:
     branches: ["main"]
     paths:
       - "docs/**"
-      - "mkdocs.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "pyproject.toml"
   workflow_dispatch:
     inputs:
       version:
-        description: "Version alias to deploy (e.g. 1.0)"
+        description: "Version to deploy (e.g. 1.0.0rc1)"
         required: false
         default: ""
 
@@ -32,23 +34,76 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
 
-      - name: Install docs dependencies
-        run: uv sync --group docs
+      - name: Install dependencies
+        run: npm install
 
-      - name: Configure git for mike
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [[ -z "$VERSION" ]]; then
+            VERSION=$(python3 -c "import tomllib; print(tomllib.loads(open('pyproject.toml').read())['project']['version'])")
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build versioned docs
+        run: npm run docs:build
+        env:
+          DOCS_BASE: /seedling/v${{ steps.version.outputs.VERSION }}/
+
+      - name: Copy versioned dist
+        run: cp -r docs/.vitepress/dist /tmp/dist-versioned
+
+      - name: Build latest docs
+        run: npm run docs:build
+        env:
+          DOCS_BASE: /seedling/latest/
+
+      - name: Copy latest dist
+        run: cp -r docs/.vitepress/dist /tmp/dist-latest
+
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Configure git
+        working-directory: gh-pages
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Deploy versioned docs
+      - name: Deploy to gh-pages
+        working-directory: gh-pages
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          if [[ -z "$VERSION" ]]; then
-            # Read version from pyproject.toml
-            VERSION=$(uv run python -c "import tomllib; print(tomllib.loads(open('pyproject.toml').read())['project']['version'])")
-          fi
-          uv run mike deploy --push --update-aliases "$VERSION" latest
-          uv run mike set-default --push latest
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          rm -rf "v${VERSION}"
+          cp -r /tmp/dist-versioned "v${VERSION}"
+
+          rm -rf latest
+          cp -r /tmp/dist-latest latest
+
+          cat > index.html << 'EOF'
+          <!doctype html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0; url=latest/">
+            <title>sqlalchemy-seedling docs</title>
+          </head>
+          <body><a href="latest/">Redirecting to latest docs...</a></body>
+          </html>
+          EOF
+
+          touch .nojekyll
+
+          git add -A
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "docs: deploy v${VERSION}"
+          git push origin gh-pages

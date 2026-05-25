@@ -27,9 +27,9 @@ check: lint test
 smoke:
     uv run uvicorn examples._dev_smoke.app:app --reload
 
-# Build the docs site locally
+# Serve docs locally (requires: npm install)
 docs:
-    uv run --group docs mkdocs serve
+    npm run docs:dev
 
 # Show the resolved seed execution order for the smoke app (requires a pyproject.toml runner)
 list-smoke:

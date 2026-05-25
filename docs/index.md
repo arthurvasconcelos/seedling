@@ -1,6 +1,35 @@
-# sqlalchemy-seedling
+---
+layout: home
 
-Async-native seeder and factory library for SQLAlchemy.
+hero:
+  name: sqlalchemy-seedling
+  text: Async-native seeder & factory library
+  tagline: Built for SQLAlchemy 2.0+ async workflows — seed databases, generate fixtures, and run factories without the boilerplate.
+  image:
+    src: /assets/logo.png
+    alt: sqlalchemy-seedling
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /seeders
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/arthurvasconcelos/seedling
+
+features:
+  - title: Seeder
+    details: Base class with depends_on, environments, models, tags, and lifecycle hooks for ordered, environment-aware seeding.
+  - title: Factory & AutoFactory
+    details: Build and persist ORM objects with traits, descriptors, and post-generation hooks. AutoFactory introspects the mapper for zero-config defaults.
+  - title: SeederRunner
+    details: Orchestrates parallel execution, state tracking, and transactional mode across your full seeder graph.
+  - title: seed CLI
+    details: Full command set — run, fresh, list, status, validate, graph, export, restore, init, make:seeder, make:factory.
+  - title: pytest plugin
+    details: Drop-in fixtures — seedling_runner, seedling_transactional_session, and @seed() decorator for clean per-test isolation.
+  - title: State Tracking
+    details: seedling_state audit log with drift detection and --new-only skip so re-runs are fast and idempotent.
+---
 
 ## Installation
 
@@ -80,19 +109,3 @@ seed list         # show execution order
 seed status       # show last run per seeder + drift detection
 seed export       # dump seeded rows to fixtures.json
 ```
-
-## What's included
-
-| Feature | Description |
-|---------|-------------|
-| `Seeder` | Base class with `depends_on`, `environments`, `models`, `tags`, and lifecycle hooks |
-| `SeederRunner` | Orchestrates parallel execution, state tracking, and transactional mode |
-| `Factory[T]` | Build and persist ORM objects with traits, descriptors, and hooks |
-| `AutoFactory[T]` | Mapper-introspected factory with smart name-based defaults |
-| `upsert()` | Dialect-aware idempotent insert helper |
-| `truncate_tables()` | Dialect-aware TRUNCATE (PG cascade, MariaDB FK disable, SQLite DELETE) |
-| `reset_sequences()` | Reset PostgreSQL SERIAL/IDENTITY sequences after truncation |
-| `deferred_constraints()` | Defer FK constraints for the duration of a block (PostgreSQL) |
-| `seed` CLI | Full command set: `run`, `fresh`, `list`, `status`, `validate`, `graph`, `export`, `restore`, `init`, `make:seeder`, `make:factory` |
-| pytest plugin | `seedling_runner`, `seedling_transactional_session`, and `@seed()` fixtures |
-| State tracking | `seedling_state` table: audit log, drift detection, `--new-only` skip |

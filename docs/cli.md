@@ -182,9 +182,10 @@ seed export UserSeeder                # export only UserSeeder's models
 | `--env` | `development` | Environment (affects which runner is created) |
 | `--output` / `-o` | `fixtures.json` | Output file path (`.json`, `.yaml`, or `.yml`) |
 
-!!! note
-    Seeders must declare `models = [MyModel]` for their data to be included.
-    UUID, datetime, and Decimal values are serialised to strings automatically.
+::: info
+Seeders must declare `models = [MyModel]` for their data to be included.
+UUID, datetime, and Decimal values are serialised to strings automatically.
+:::
 
 ---
 

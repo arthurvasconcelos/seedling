@@ -10,3 +10,6 @@ build/
 *.egg-info/
 htmlcov/
 .coverage
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/

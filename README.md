@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" width="120" alt="sqlalchemy-seedling logo">
+  <img src="docs/public/assets/logo.png" width="120" alt="sqlalchemy-seedling logo">
 </p>
 
 # sqlalchemy-seedling
