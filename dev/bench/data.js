@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779741018976,
+  "lastUpdate": 1779747600585,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -527,6 +527,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.5995,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "5e3b7e078c1b65c303914a9ee753e1ec4602236e",
+          "message": "docs: add vitepress-plugin-llms and vitepress-plugin-group-icons",
+          "timestamp": "2026-05-26T00:19:43+02:00",
+          "tree_id": "85c6f898b7d8933bceb6ae5ced24666fd2e9b54a",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/5e3b7e078c1b65c303914a9ee753e1ec4602236e"
+        },
+        "date": 1779747599904,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.1479,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1014,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.5736,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.6476,
             "unit": "seconds"
           }
         ]
