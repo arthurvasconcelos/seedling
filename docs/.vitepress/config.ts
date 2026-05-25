@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vitepress'
+import llmstxt, { copyOrDownloadAsMarkdownButtons } from 'vitepress-plugin-llms'
+import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons'
 
 const pyproject = readFileSync(`${__dirname}/../../pyproject.toml`, 'utf-8')
 const version = pyproject.match(/^version\s*=\s*"([^"]+)"/m)?.[1] ?? 'dev'
@@ -8,6 +10,10 @@ export default defineConfig({
   title: 'sqlalchemy-seedling',
   description: 'Async-native seeder and factory library for SQLAlchemy',
   base: process.env.DOCS_BASE ?? '/seedling/',
+
+  vite: {
+    plugins: [llmstxt(), groupIconVitePlugin()],
+  },
 
   head: [
     ['link', { rel: 'icon', href: 'assets/favicon.png' }],
@@ -42,6 +48,7 @@ export default defineConfig({
           { text: 'Benchmarks', link: '/benchmarks' },
         ],
       },
+      { text: 'For LLMs', link: '/llms' },
       {
         text: `v${version}`,
         items: [
@@ -81,5 +88,9 @@ export default defineConfig({
 
   markdown: {
     lineNumbers: true,
+    config(md) {
+      md.use(groupIconMdPlugin)
+      md.use(copyOrDownloadAsMarkdownButtons)
+    },
   },
 })

@@ -1,0 +1,15 @@
+.llm-link {
+  display: inline-block;
+  padding: 6px 16px;
+  background-color: var(--vp-button-brand-bg);
+  color: var(--vp-button-brand-text) !important;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none !important;
+  transition: background-color 0.2s;
+}
+
+.llm-link:hover {
+  background-color: var(--vp-button-brand-hover-bg);
+}
