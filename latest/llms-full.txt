@@ -1,0 +1,2076 @@
+---
+url: /seedling/latest/getting-started.md
+---
+# Getting Started
+
+## Installation
+
+```bash
+pip install sqlalchemy-seedling
+# or with uv
+uv add sqlalchemy-seedling
+```
+
+Optional YAML fixture support:
+
+```bash
+pip install sqlalchemy-seedling[yaml]
+```
+
+## 5-minute quickstart
+
+### 1. Scaffold the layout
+
+```bash
+seed init
+```
+
+Creates `seeders/` and `factories/` packages and appends a `[tool.seedling]` block to `pyproject.toml`.
+
+### 2. Configure your runner
+
+Point the CLI at your runner factory in `pyproject.toml`:
+
+```toml
+[tool.seedling]
+runner = "myapp.seeders:create_runner"
+```
+
+### 3. Create a runner factory
+
+```python
+# myapp/seeders/__init__.py
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from seedling import SeederRunner
+
+def create_runner(env: str) -> SeederRunner:
+    engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/mydb")
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    runner = SeederRunner(session_factory, env=env)
+    runner.discover("myapp.seeders")
+    return runner
+```
+
+### 4. Write a seeder
+
+```python
+# myapp/seeders/users.py
+from seedling import Seeder, DEV_AND_TEST
+from sqlalchemy.ext.asyncio import AsyncSession
+from myapp.models import User
+
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+    models = [User]
+    tags = {"demo"}
+
+    async def run(self, session: AsyncSession) -> None:
+        session.add(User(email="admin@example.com", name="Admin"))
+        await session.commit()
+
+    async def truncate(self, session: AsyncSession) -> None:
+        await session.execute(text("TRUNCATE users CASCADE"))
+```
+
+### 5. Run it
+
+```bash
+seed run          # run all seeders for development
+seed fresh        # truncate then re-seed
+seed list         # show execution order
+seed status       # show last run per seeder + drift detection
+seed export       # dump seeded rows to fixtures.json
+```
+
+---
+
+---
+url: /seedling/latest/seeders.md
+---
+# Seeders
+
+A `Seeder` is a class that populates one or more database tables. Seeders declare their dependencies so the runner can resolve execution order and parallelise independent seeders.
+
+## Defining a seeder
+
+```python
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from seedling import Seeder, DEV_AND_TEST
+from myapp.models import User
+
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+    models = [User]
+
+    async def run(self, session: AsyncSession) -> None:
+        session.add(User(email="alice@example.com", name="Alice"))
+        await session.commit()
+
+    async def truncate(self, session: AsyncSession) -> None:
+        await session.execute(text("TRUNCATE users CASCADE"))
+```
+
+## Class variables
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `depends_on` | `list[type[Seeder]]` | `[]` | Seeders that must run before this one |
+| `environments` | `set[str]` | `DEV_AND_TEST` | Environments in which this seeder runs |
+| `idempotent` | `bool` | `True` | Whether `upsert()` uses `on_conflict_do_nothing` |
+| `models` | `list[Any]` | `[]` | ORM model classes seeded here (used by `seed export`) |
+| `tags` | `set[str]` | `set()` | Arbitrary labels for tag-based filtering |
+
+## Dependency ordering
+
+Use `depends_on` to declare that one seeder requires another to have run first:
+
+```python
+class PostSeeder(Seeder):
+    depends_on = [UserSeeder]
+
+    async def run(self, session: AsyncSession) -> None:
+        ...
+```
+
+The runner resolves a topological sort and executes independent seeders concurrently at each level.
+
+## Environments
+
+Environment constants are provided by seedling:
+
+```python
+from seedling import DEV, TEST, PROD, ALL, DEV_AND_TEST
+```
+
+Only seeders whose `environments` set contains the current env are executed. Use `--env` on the CLI to select the environment.
+
+```python
+class ProdSeeder(Seeder):
+    environments = {PROD}  # only runs with: seed run --env production
+```
+
+## Tags
+
+Tag seeders with arbitrary labels for fine-grained filtering:
+
+```python
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+    tags = {"demo", "smoke"}
+
+class HeavySeeder(Seeder):
+    environments = DEV_AND_TEST
+    tags = {"demo"}
+```
+
+```bash
+seed run --tag smoke          # only runs UserSeeder (it has the "smoke" tag)
+seed run --tag demo           # runs both
+seed run --tag demo --tag smoke  # union: runs any seeder matching either tag
+```
+
+Tags filter independently from the environment filter — both must pass for a seeder to run.
+
+## Auto-discovery
+
+Instead of manually registering seeders, call `runner.discover()` with your seeders package:
+
+```python
+runner.discover("myapp.seeders")
+```
+
+This imports all modules under the package and registers every `Seeder` subclass it finds.
+
+## Lifecycle hooks
+
+Override these async methods to add logic before or after a seeder runs:
+
+```python
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+
+    async def before_run(self, session: AsyncSession) -> None:
+        # Called immediately before run()
+        pass
+
+    async def run(self, session: AsyncSession) -> None:
+        ...
+
+    async def after_run(self, session: AsyncSession) -> None:
+        # Called after a successful run()
+        pass
+
+    async def on_error(self, session: AsyncSession, exc: BaseException) -> None:
+        # Called if run() raises — default is a no-op
+        pass
+```
+
+All hooks are no-ops by default. `on_error` receives the exception but does not suppress it — the runner still re-raises after calling it.
+
+---
+
+---
+url: /seedling/latest/factories.md
+---
+# Factories
+
+`Factory[T]` generates ORM model instances with realistic data for use in seeders and
+tests.  Phase 0.4 added `AutoFactory`, declarative `Trait` classes, `@post_generation`
+hooks, `RelatedFactory`, and a full set of field descriptors.
+
+***
+
+## Defining a factory
+
+Subclass `Factory[T]` and set `model` to the SQLAlchemy mapped class.  Field
+declarations at class level become the default values for each instance.
+
+```python
+from seedling import Factory, Faker, LazyAttribute, Sequence, SubFactory
+from myapp.models import User, Post
+
+class UserFactory(Factory[User]):
+    model = User
+    name  = Faker("name")
+    email = Faker("email")
+
+class PostFactory(Factory[Post]):
+    model = Post
+    title  = Faker("sentence")
+    author = SubFactory(UserFactory)
+```
+
+### AutoFactory
+
+`AutoFactory[T]` introspects the SQLAlchemy mapper and generates sensible defaults
+automatically — no field declarations required.
+
+```python
+from seedling import AutoFactory
+from myapp.models import User
+
+class UserFactory(AutoFactory[User]):
+    model = User
+```
+
+Auto-generated defaults by column type:
+
+| SQLAlchemy type | Default |
+|-----------------|---------|
+| `String` / `Text` | `"value-N"` (unique per build) |
+| `Integer` / `BigInteger` / `SmallInteger` | `N` (unique per build) |
+| `Boolean` | `False` |
+| `Date` | `date.today()` |
+| `DateTime` | `datetime.now()` |
+| `Uuid` | `uuid4()` |
+| `Float` / `Numeric` | `0` |
+
+Primary keys are always skipped.
+
+#### Smart defaults
+
+When `class Meta: smart_defaults = True` (the default), named columns get faker-based
+values automatically:
+
+| Column name | Default |
+|-------------|---------|
+| `email` | `faker.email()` |
+| `first_name` | `faker.first_name()` |
+| `last_name` | `faker.last_name()` |
+| `name` | `faker.name()` |
+| `phone` / `phone_number` | `faker.phone_number()` |
+| `username` | `faker.user_name()` |
+| `address` | `faker.address()` |
+| `city` | `faker.city()` |
+| `country` | `faker.country()` |
+| `url` / `website` | `faker.url()` |
+| `description` | `faker.sentence()` |
+| `title` | `faker.sentence(nb_words=4)` |
+| `slug` | `faker.slug()` |
+| `company` / `company_name` | `faker.company()` |
+
+Opt out per factory:
+
+```python
+class UserFactory(AutoFactory[User]):
+    model = User
+
+    class Meta:
+        smart_defaults = False
+```
+
+#### FK resolution
+
+FK columns are resolved by looking up the target model's factory in the factory
+registry.  If found, a related row is created automatically.  If not found:
+
+* **Nullable FK** — field is left unset (DB default / `None`).
+* **Non-nullable FK** — `AutoFactoryResolutionError` is raised at `create()` time.
+
+Pass the FK value explicitly to bypass auto-resolution entirely:
+
+```python
+article = await ArticleFactory.create(session, author_id=42)
+```
+
+#### Overriding auto-generated fields
+
+Explicitly declared fields always win over auto-generated ones:
+
+```python
+class UserFactory(AutoFactory[User]):
+    model = User
+    email = "fixed@example.com"          # overrides smart default
+    bio   = Skip                          # suppresses the auto-generated default
+```
+
+***
+
+## Field descriptors
+
+### `Faker(provider, *args, locale=None, **kwargs)`
+
+Calls a `faker` provider by name each build:
+
+```python
+email   = Faker("email")
+name    = Faker("name", locale="fr_FR")
+code    = Faker("numerify", text="###-##")
+```
+
+### `LazyAttribute(func)`
+
+Evaluated once per build, receiving the partially-built field dict:
+
+```python
+handle = LazyAttribute(lambda f: f["email"].split("@")[0])
+```
+
+### `SelfAttribute(attr_path, default=None)`
+
+References a sibling field by name.  Dot-notation traverses attributes:
+
+```python
+username = SelfAttribute("email")
+city     = SelfAttribute("address.city", default="Unknown")
+```
+
+### `Sequence(func)`
+
+Auto-incrementing counter shared across all builds of the factory:
+
+```python
+code = Sequence(lambda n: f"ID-{n:04d}")   # ID-0000, ID-0001, ...
+```
+
+### `Iterator(values)`
+
+Cycles through a fixed list, wrapping around:
+
+```python
+role = Iterator(["admin", "user", "moderator"])
+```
+
+### `SubFactory(OtherFactory)`
+
+Creates a related instance by calling `OtherFactory.create()` (in `create()`) or
+skips the field in `build()`:
+
+```python
+author = SubFactory(UserFactory)
+```
+
+### `Skip`
+
+Omits a field entirely — the model's `__init__` never receives it:
+
+```python
+class UserFactory(AutoFactory[User]):
+    model = User
+    internal_flag = Skip   # suppress the auto-generated default
+```
+
+***
+
+## Traits
+
+Declare traits as inner classes that subclass `Trait`.  Apply them via bool kwargs.
+
+```python
+from seedling import Factory, Trait
+
+class UserFactory(Factory[User]):
+    model     = User
+    name      = Faker("name")
+    email     = Faker("email")
+    is_active = True
+    is_staff  = False
+
+    class inactive(Trait):
+        is_active = False
+
+    class admin(Trait):
+        is_staff  = True
+        is_active = True
+```
+
+```python
+user = UserFactory.build(inactive=True)
+user = UserFactory.build(admin=True)
+user = UserFactory.build(admin=True, inactive=True)   # stackable — later wins
+user = UserFactory.build(admin=True, is_staff=False)  # explicit kwarg beats trait
+```
+
+Traits support all descriptors — `LazyAttribute`, `Sequence`, `Faker`, etc.
+
+Traits are inherited through the factory MRO.  A child factory can override a parent
+trait by declaring a trait with the same name.
+
+`trait_name=False` suppresses the trait and is consumed (not forwarded to the model).
+
+***
+
+## Post-generation hooks
+
+`@post_generation` decorates an async (or sync) method that fires after the instance
+has been flushed and refreshed in `create()`.  Silently skipped in `build()`.
+
+```python
+from seedling import post_generation
+
+class UserFactory(Factory[User]):
+    model = User
+    email = Faker("email")
+
+    @post_generation
+    async def assign_role(instance, session):
+        role = await RoleFactory.create(session, user_id=instance.id)
+```
+
+* The function receives `(instance, session)`.
+* Multiple hooks on one factory fire in MRO order (base → subclass, declaration order).
+* A child factory can override a parent hook by using the same method name.
+
+***
+
+## Related factories
+
+Create related rows automatically after the main instance is persisted.
+
+### `RelatedFactory(factory, **kwargs)`
+
+Creates one related instance.  Callable kwargs receive the parent instance:
+
+```python
+from seedling import RelatedFactory
+
+class AuthorFactory(Factory[Author]):
+    model = Author
+    email = Faker("email")
+
+    # Creates one Article pointing back to this Author
+    default_article = RelatedFactory(
+        ArticleFactory,
+        author_id=lambda inst: inst.id,
+        title="Introduction",
+    )
+```
+
+### `RelatedFactoryList(factory, size=1, **kwargs)`
+
+Creates `size` related instances:
+
+```python
+articles = RelatedFactoryList(ArticleFactory, size=5, author_id=lambda i: i.id)
+```
+
+`RelatedFactory` / `RelatedFactoryList` fire after `@post_generation` hooks.
+Both are silently skipped in `build()`.
+
+***
+
+## Building instances
+
+```python
+# In-memory, no DB
+user  = UserFactory.build()
+user  = UserFactory.build(name="Alice", admin=True)
+users = UserFactory.build_batch(5)
+
+# Dict (no ORM instance)
+data  = UserFactory.build_dict()
+data  = UserFactory.build_dict(name="Alice")
+```
+
+`build()` and `build_dict()` skip all DB-only descriptors (`SubFactory`,
+`RelatedFactory`, FK auto-resolve) and all `@post_generation` hooks.
+
+***
+
+## Persisting instances
+
+```python
+# Single row
+user = await UserFactory.create(session)
+user = await UserFactory.create(session, name="Bob", admin=True)
+
+# Multiple rows (per-row, with hooks)
+users = await UserFactory.create_batch(session, 10)
+
+# Bulk insert — fast, no hooks
+users = await UserFactory.create_batch(session, 1000, bulk=True)
+```
+
+**`bulk=True` limitations:** `@post_generation` hooks and `RelatedFactory` /
+`RelatedFactoryList` do **not** fire.  `SubFactory` and FK-auto-resolve fields are
+omitted — supply them via overrides.
+
+***
+
+## Factory registry
+
+Every factory that declares `model = ...` on its own body is automatically registered.
+Look up a factory by model class:
+
+```python
+from seedling import get_factory
+
+factory_cls = get_factory(User)   # UserFactory, or None
+```
+
+`AutoFactory` uses the registry internally for FK resolution.
+
+***
+
+## Test utilities
+
+### `reset_sequence(value=0)`
+
+Resets the `Sequence` counter and all `Iterator` fields in the factory's MRO:
+
+```python
+def setup_method(self):
+    UserFactory.reset_sequence()
+    UserFactory.reset_sequence(100)   # start at 100
+```
+
+### `seed(n)`
+
+Seeds the `faker` instance for deterministic output:
+
+```python
+def setup_method(self):
+    UserFactory.seed(42)
+```
+
+***
+
+## Migration guide: `as_trait()` → `Trait`
+
+`as_trait()` has been removed in 0.4.  Replace functional call-site trait creation with
+declarative inner `Trait` classes.
+
+**Before (0.3):**
+
+```python
+class UserFactory(Factory[User]):
+    model     = User
+    is_active = True
+    is_staff  = False
+
+inactive = UserFactory.as_trait(is_active=False)
+admin    = UserFactory.as_trait(is_staff=True)
+
+# Usage
+inactive.build()
+admin.create(session)
+```
+
+**After (0.4):**
+
+```python
+class UserFactory(Factory[User]):
+    model     = User
+    is_active = True
+    is_staff  = False
+
+    class inactive(Trait):
+        is_active = False
+
+    class admin(Trait):
+        is_staff = True
+
+# Usage
+UserFactory.build(inactive=True)
+await UserFactory.create(session, admin=True)
+```
+
+Key differences:
+
+* Traits are **stackable** — pass multiple booleans to combine them.
+* `trait_name=False` suppresses a trait without forwarding the kwarg to the model.
+* Traits inherit through the factory MRO — define once, reuse in subclasses.
+* `LazyAttribute`, `Sequence`, `Faker`, and other descriptors work inside `Trait` bodies.
+
+---
+
+---
+url: /seedling/latest/state-tracking.md
+---
+# State Tracking
+
+Seedling records every seeder execution in a `seedling_state` table that lives in the same database as your seeded data. This gives you an audit trail, drift detection, and the ability to skip seeders that are already up-to-date.
+
+## How it works
+
+On the first call to `seed run` or `seed fresh`, Seedling automatically creates the `seedling_state` table (`CREATE TABLE IF NOT EXISTS`). No migration is needed — it works like Alembic's `alembic_version` table.
+
+Every seeder execution appends one row:
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | integer | Auto-incrementing primary key |
+| `seeder_name` | varchar | Class name of the seeder |
+| `env` | varchar | The environment passed to the runner |
+| `run_id` | varchar(36) | UUID shared across all seeders in a single `run()` call |
+| `status` | varchar | `running`, `success`, or `error` |
+| `started_at` | datetime | UTC timestamp when the seeder started |
+| `finished_at` | datetime | UTC timestamp when the seeder finished (NULL if still running) |
+| `duration_ms` | integer | Wall-clock duration in milliseconds |
+| `error` | text | Error message if status is `error` |
+| `rows_seeded` | integer | Reserved — NULL by default |
+| `content_hash` | varchar(64) | SHA-256 of the `run()` method's source code |
+
+The history is **append-only**: rows are never deleted between normal runs. They are only deleted when you call `seed fresh`, which wipes state for the affected seeders before re-seeding.
+
+## Drift detection
+
+The `content_hash` column stores a SHA-256 hash of the seeder's `run()` source code at the time it was last executed. When `seed status` is shown, the current hash is compared to the stored hash. A mismatch means the seeder's code has changed since it last ran — that run is considered "drifted".
+
+Drift is displayed in `seed status` and is also used by `--new-only` to decide whether a seeder needs to re-run.
+
+## Commands
+
+### `seed status`
+
+Show the latest run per seeder with drift detection:
+
+```
+seed status --env development
+```
+
+Output:
+
+```
+Seeder status  development
+
+ Seeder         Status    Last run              Duration  Drift
+ ─────────────────────────────────────────────────────────────
+ UserSeeder     success   2026-05-02 12:00:00   42ms      —
+ PostSeeder     success   2026-05-02 12:00:01   18ms      ⚠ drift
+```
+
+Use `--json` for machine-readable output (useful in CI scripts):
+
+```
+seed status --env development --json
+```
+
+### `seed validate`
+
+Static checks with no database connection required:
+
+```
+seed validate --env development
+```
+
+Checks performed:
+
+* **Cycles** — any circular `depends_on` chain raises an error
+* **Missing deps** — a seeder that references an unregistered dependency
+* **Empty environments** — a seeder whose `environments` set is empty will never run
+* **Missing models** — a seeder without a `models` list won't appear in `seed export`
+
+All issues are printed and the command exits with code 1 if any are found.
+
+### `seed graph`
+
+Visualize the dependency graph as Graphviz DOT (default) or Mermaid:
+
+```
+# Graphviz DOT — pipe to dot for rendering
+seed graph | dot -Tpng -o deps.png
+
+# Mermaid — paste into a .md file or Mermaid Live Editor
+seed graph --mermaid
+```
+
+## Run flags
+
+### `--new-only`
+
+Skip seeders whose latest state is `success` **and** whose `content_hash` matches the current source. Seeders that have never run, last failed, or have drifted will always run.
+
+```
+seed run --new-only
+```
+
+This is the opt-in idempotency flag. `seed run` without `--new-only` always runs all seeders and records the result.
+
+### `--force`
+
+Override `--new-only` and run all seeders regardless of state:
+
+```
+seed run --new-only --force
+```
+
+### `--max-parallel N`
+
+Cap how many seeders run concurrently within a single dependency level:
+
+```
+seed run --max-parallel 2
+```
+
+Without this flag, all seeders in the same level run in parallel (the 0.2 default).
+
+## Transactional mode
+
+`SeederRunner(transactional=True)` wraps the entire run in a single transaction. All seeders share one session; if any seeder raises, the entire transaction rolls back.
+
+```python
+runner = SeederRunner(session_factory, env="test", transactional=True)
+```
+
+**Note:** State tracking is skipped in transactional mode. Because the seeder data and state rows would be in the same transaction, a rollback would also roll back the state records, making them unreliable. Use transactional mode for test isolation, not production audit.
+
+## Opting out
+
+Disable state tracking globally for a project via `pyproject.toml`:
+
+```toml
+[tool.seedling]
+runner = "myapp.seeders:create_runner"
+state_tracking = false
+```
+
+Or per `SeederRunner` instance:
+
+```python
+runner = SeederRunner(session_factory, env="development", state_tracking=False)
+```
+
+When disabled, the `seedling_state` table is never created or queried.
+
+## The `fresh` command and state
+
+`seed fresh` wipes state for all affected seeders **before** truncating tables and re-seeding. This gives you a clean slate — history for those seeders in that environment is gone. This is intentional: `fresh` means "start over."
+
+State for seeders in other environments is untouched.
+
+---
+
+---
+url: /seedling/latest/runner.md
+---
+# Runner
+
+`SeederRunner` orchestrates seeder execution: dependency resolution, environment filtering, parallel execution, and state tracking.
+
+## Creating a runner
+
+```python
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from seedling import SeederRunner
+
+engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/mydb")
+session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+runner = SeederRunner(session_factory, env="development")
+```
+
+### Constructor parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_factory` | `async_sessionmaker` | required | SQLAlchemy async session factory |
+| `env` | `str` | `"development"` | Environment string passed to environment filters |
+| `state_tracking` | `bool` | `True` | Record executions in `seedling_state` table |
+| `transactional` | `bool` | `False` | Wrap the entire run in a single transaction |
+| `max_parallel` | `int \| None` | `None` | Cap concurrency within a dependency level |
+
+## Registering seeders
+
+Register explicitly:
+
+```python
+runner.register(UserSeeder, PostSeeder, CommentSeeder)
+```
+
+Or discover all seeders in a package automatically:
+
+```python
+runner.discover("myapp.seeders")
+```
+
+`discover()` imports every module under the package and registers all `Seeder` subclasses it finds. Calling it multiple times is safe — duplicates are ignored.
+
+## Running seeders
+
+```python
+await runner.run()                       # run all seeders for the current env
+await runner.run(PostSeeder)             # run PostSeeder + its dependencies
+await runner.run(new_only=True)          # skip seeders whose source hash matches latest success
+await runner.run(force=True)            # override new_only — always run all
+await runner.run(tags={"demo"})         # only run seeders tagged "demo"
+```
+
+Seeders at the same dependency level run concurrently via `asyncio.gather`. Dependent seeders always run after their dependencies.
+
+### `run()` parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `*seeder_classes` | `type[Seeder]` | — | Optional subset; defaults to all registered |
+| `new_only` | `bool` | `False` | Skip seeders with matching state hash |
+| `force` | `bool` | `False` | Override `new_only` — run regardless of state |
+| `tags` | `set[str] \| None` | `None` | Filter to seeders whose `tags` intersects this set |
+
+## Fresh (truncate + reseed)
+
+```python
+await runner.fresh()                     # truncate all then reseed
+await runner.fresh(PostSeeder)           # truncate + reseed PostSeeder and its deps
+await runner.fresh(tags={"demo"})        # only fresh seeders tagged "demo"
+```
+
+Tables are truncated in reverse dependency order, then re-seeded in forward order. `seed fresh` also wipes `seedling_state` rows for affected seeders before truncating (clean-slate semantics).
+
+## Listing seeders
+
+```python
+ordered = runner.list_seeders()                        # all, env-filtered, sorted
+subset  = runner.list_seeders(PostSeeder)              # PostSeeder + dependencies
+tagged  = runner.list_seeders(tags={"smoke"})          # only tagged seeders
+```
+
+Returns a flat list — no execution happens.
+
+## Transactional mode
+
+`transactional=True` wraps the entire run in a single transaction. All seeders share one session; if any seeder raises, everything rolls back.
+
+```python
+runner = SeederRunner(session_factory, env="test", transactional=True)
+await runner.run()
+```
+
+**Note:** State tracking is skipped in transactional mode — if the transaction rolled back, any state rows would roll back too, making them unreliable. Use transactional mode for test isolation, not production audit.
+
+## Parallel cap
+
+```python
+runner = SeederRunner(session_factory, env="development", max_parallel=4)
+```
+
+By default all seeders within a dependency level run in parallel. `max_parallel` caps how many run simultaneously within each level.
+
+## Exporting and restoring data
+
+```python
+data = await runner.export()
+# {"users": [{"id": 1, "email": "..."}, ...], "posts": [...]}
+
+total = await runner.restore(data)   # returns total rows inserted
+```
+
+Only models declared on `Seeder.models` are exported. The restore path uses bulk Core insert; table order must satisfy FK constraints (export order is safe to restore as-is).
+
+## Lookup by name
+
+```python
+cls = runner.get_by_name("UserSeeder")   # raises ValueError for unknown names
+```
+
+## Runner-level lifecycle hooks
+
+Override these async methods on a `SeederRunner` subclass to react to run-level events:
+
+```python
+class AuditingRunner(SeederRunner):
+    async def before_run(self, run_id: str, env: str) -> None:
+        print(f"run {run_id} starting for {env}")
+
+    async def after_run(self, run_id: str, env: str) -> None:
+        print(f"run {run_id} complete")
+
+    async def on_run_error(self, run_id: str, env: str, exc: BaseException) -> None:
+        print(f"run {run_id} failed: {exc}")
+```
+
+All three are no-ops by default. `on_run_error` does not suppress the exception.
+
+## pytest fixture
+
+The `seedling_runner` fixture is provided by the pytest plugin:
+
+```python
+# conftest.py
+import pytest
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+@pytest.fixture(scope="session")
+def seedling_session_factory():
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    return async_sessionmaker(engine, expire_on_commit=False)
+
+# test_something.py
+async def test_with_users(seedling_runner):
+    await seedling_runner.run(UserSeeder)
+    ...
+```
+
+---
+
+---
+url: /seedling/latest/cli.md
+---
+# CLI Reference
+
+The `seed` command is installed as an entry point when you install seedling.
+
+All commands read `[tool.seedling]` from the `pyproject.toml` in the current directory.
+
+***
+
+## `seed run [SEEDERS...] [OPTIONS]`
+
+Run seeders in dependency order.
+
+```bash
+seed run                              # run all seeders (env: development)
+seed run --env test                   # run all test seeders
+seed run UserSeeder PostSeeder        # run specific seeders + their deps
+seed run --new-only                   # skip seeders whose source hasn't changed
+seed run --force                      # re-run all, even if state says success
+seed run --max-parallel 4             # cap concurrency to 4 within each level
+seed run --tag demo                   # only run seeders tagged "demo"
+seed run --tag demo --tag smoke       # union: any seeder matching either tag
+seed run --env production             # requires SEEDLING_ALLOW_PROD=1 + confirmation
+```
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment to seed |
+| `--new-only` | off | Skip seeders whose latest state is `success` and hash matches |
+| `--force` | off | Override `--new-only` — always run all seeders |
+| `--max-parallel N` | unlimited | Cap concurrency within a dependency level |
+| `--tag LABEL` | — | Filter to seeders with this tag (repeatable) |
+
+***
+
+## `seed fresh [SEEDERS...] [OPTIONS]`
+
+Truncate affected tables then run seeders. Useful for a clean slate.
+
+```bash
+seed fresh
+seed fresh --env test
+seed fresh UserSeeder             # truncate + reseed UserSeeder (and its deps)
+seed fresh --tag demo             # truncate + reseed tagged seeders only
+seed fresh --env production       # requires SEEDLING_ALLOW_PROD=1 + confirmation
+```
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment to seed |
+| `--max-parallel N` | unlimited | Cap concurrency within a dependency level |
+| `--tag LABEL` | — | Filter to seeders with this tag (repeatable) |
+
+***
+
+## `seed list [SEEDERS...] [OPTIONS]`
+
+Print the resolved execution order without running anything.
+
+```bash
+seed list
+seed list --env production
+seed list PostSeeder
+seed list --tag demo
+seed list --quiet                 # names only, one per line
+seed list --verbose               # adds Idempotent column
+seed list --json                  # machine-readable JSON array
+```
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment to filter by |
+| `--tag LABEL` | — | Filter by tag (repeatable) |
+| `--quiet` / `-q` | off | Print seeder names only, one per line |
+| `--verbose` / `-v` | off | Show idempotent flag in output |
+| `--json` | off | Output as JSON array with `name`, `depends_on`, `environments` keys |
+
+***
+
+## `seed status [OPTIONS]`
+
+Show the latest run per seeder with drift detection.
+
+```bash
+seed status
+seed status --env test
+seed status --json
+```
+
+Output:
+
+```
+Seeder status  development
+
+ Seeder         Status    Last run              Duration  Drift
+ ─────────────────────────────────────────────────────────────
+ UserSeeder     success   2026-05-02 12:00:00   42ms      —
+ PostSeeder     success   2026-05-02 12:00:01   18ms      ⚠ drift
+```
+
+A `⚠ drift` flag means the seeder's `run()` source has changed since it last ran. Use `seed run` (without `--new-only`) to re-run it and clear the drift.
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment to query |
+| `--json` | off | Output as JSON array |
+
+***
+
+## `seed validate [OPTIONS]`
+
+Static checks with no database connection required.
+
+```bash
+seed validate
+seed validate --env production
+```
+
+Checks performed:
+
+* **Cycles** — any circular `depends_on` chain
+* **Missing deps** — a seeder that references an unregistered dependency
+* **Empty environments** — a seeder whose `environments` set is empty will never run
+* **Missing models** — a seeder without a `models` list won't appear in `seed export`
+
+All issues are printed and the command exits with code 1 if any are found.
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment to validate for |
+
+***
+
+## `seed graph [SEEDERS...] [OPTIONS]`
+
+Output the dependency graph as Graphviz DOT (default) or Mermaid.
+
+```bash
+# Graphviz DOT — pipe to dot for rendering
+seed graph | dot -Tpng -o deps.png
+
+# Mermaid — paste into a .md file or Mermaid Live Editor
+seed graph --mermaid
+
+# Only a subset of seeders
+seed graph PostSeeder CommentSeeder
+```
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment to graph |
+| `--mermaid` | off | Output Mermaid flowchart instead of Graphviz DOT |
+
+***
+
+## `seed export [SEEDERS...] [OPTIONS]`
+
+Query all rows for models declared on registered seeders and write them to a file.
+
+```bash
+seed export                           # writes fixtures.json
+seed export --output data/seed.json   # custom output path
+seed export --output seed.yaml        # YAML output (requires [yaml] extra)
+seed export UserSeeder                # export only UserSeeder's models
+```
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment (affects which runner is created) |
+| `--output` / `-o` | `fixtures.json` | Output file path (`.json`, `.yaml`, or `.yml`) |
+
+::: info
+Seeders must declare `models = [MyModel]` for their data to be included.
+UUID, datetime, and Decimal values are serialised to strings automatically.
+:::
+
+***
+
+## `seed restore FILE [OPTIONS]`
+
+Load rows from a fixture file back into the database.
+
+```bash
+seed restore fixtures.json
+seed restore seed.yaml --env test
+```
+
+Tables in the fixture that have no matching seeder model are skipped with a warning. Rows are inserted using bulk Core insert — the table order in the fixture must satisfy FK constraints. Fixture files produced by `seed export` are always safe to restore.
+
+**Options**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--env` | `development` | Environment (used to resolve the runner) |
+
+***
+
+## `seed init`
+
+Scaffold `seeders/` and `factories/` packages and configure `pyproject.toml`.
+
+```bash
+seed init
+```
+
+Creates:
+
+* `seeders/__init__.py` — runner factory stub with inline instructions
+* `factories/__init__.py` — import index for factory registry
+* Appends `[tool.seedling]` to `pyproject.toml`
+
+If either directory already exists, that step is skipped. Run from your project root.
+
+***
+
+## `seed make:seeder NAME`
+
+Generate a seeder stub in `seeders/<name_snake>.py`.
+
+```bash
+seed make:seeder UserSeeder
+seed make:seeder BlogPostSeeder
+```
+
+The name must be CamelCase. A file is created at `seeders/user_seeder.py` (or equivalent snake\_case). Requires `seeders/` to exist — run `seed init` first.
+
+***
+
+## `seed make:factory MODULE:CLASSNAME`
+
+Generate a factory stub for a SQLAlchemy model.
+
+```bash
+seed make:factory myapp.models:User
+seed make:factory myapp.models:BlogPost
+```
+
+Introspects the model and generates an `AutoFactory` stub. Non-nullable, non-PK, non-FK string columns are listed as explicit stubs with a `# TODO` comment. Requires `factories/` to exist — run `seed init` first.
+
+***
+
+## Production guard
+
+When `--env production` is passed to `run` or `fresh`, seedling requires both:
+
+1. The `SEEDLING_ALLOW_PROD=1` environment variable must be set.
+2. An interactive confirmation prompt must be accepted.
+
+```
+⚠  Production
+───────────────────────────────────────────
+You are about to seed the production environment.
+This cannot be undone.
+───────────────────────────────────────────
+Continue? [y/N]:
+```
+
+If `SEEDLING_ALLOW_PROD=1` is not set, the command exits immediately with a non-zero code — no prompt is shown. This makes it safe to add production seeding to CI/CD without a risk of accidental execution in interactive sessions.
+
+---
+
+---
+url: /seedling/latest/configuration.md
+---
+# Configuration
+
+seedling is configured via `[tool.seedling]` in your project's `pyproject.toml`.
+
+## `[tool.seedling]`
+
+```toml
+[tool.seedling]
+runner = "myapp.seeders:create_runner"
+state_tracking = true
+```
+
+### `runner` (required)
+
+A `module:function` path to a factory function that creates and returns a `SeederRunner`.
+
+The function receives one argument — the environment string (e.g. `"development"`, `"test"`, `"production"`) — and must return a configured `SeederRunner`.
+
+```python
+# myapp/seeders/__init__.py
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from seedling import SeederRunner
+
+def create_runner(env: str) -> SeederRunner:
+    engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/mydb")
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    runner = SeederRunner(session_factory, env=env)
+    runner.discover("myapp.seeders")
+    return runner
+```
+
+### `state_tracking` (optional, default `true`)
+
+Controls whether the runner records executions in the `seedling_state` table.
+
+```toml
+[tool.seedling]
+runner = "myapp.seeders:create_runner"
+state_tracking = false
+```
+
+When `false`, the `seedling_state` table is never created or queried. `seed status` will show no data, and `--new-only` has no effect. Useful for ephemeral environments where audit history is not needed.
+
+This setting is read by the CLI and applied to every runner returned by your factory. You can also set it directly on the runner instance:
+
+```python
+runner = SeederRunner(session_factory, env=env, state_tracking=False)
+```
+
+## pytest plugin configuration
+
+Override the `seedling_session_factory` fixture in your `conftest.py` to supply the session factory used by the `seedling_runner` fixture:
+
+```python
+# conftest.py
+import pytest
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+@pytest.fixture(scope="session")
+def seedling_session_factory():
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    return async_sessionmaker(engine, expire_on_commit=False)
+```
+
+Override `seedling_env` to change the default environment used in tests (defaults to `"test"`):
+
+```python
+@pytest.fixture
+def seedling_env() -> str:
+    return "development"
+```
+
+---
+
+---
+url: /seedling/latest/migration.md
+---
+# Migrate from factory\_boy
+
+This guide shows side-by-side comparisons for the most common factory\_boy patterns
+and their seedling equivalents. factory\_boy and seedling share several concepts
+(`LazyAttribute`, `Sequence`, `SubFactory`, `RelatedFactory`) but differ in two
+important ways:
+
+1. **seedling is async-first** — `create()` and `create_batch()` are coroutines.
+2. **seedling passes a session** — no global session state; the caller decides which
+   session to use.
+
+***
+
+## Defining a factory
+
+**factory\_boy**
+
+```python
+import factory
+from myapp.models import User
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    email = factory.Faker("email")
+    name  = factory.Faker("name")
+```
+
+**seedling**
+
+```python
+from seedling import Factory, Faker
+from myapp.models import User
+
+class UserFactory(Factory[User]):
+    model = User
+    email = Faker("email")
+    name  = Faker("name")
+```
+
+The `model` class attribute replaces `class Meta: model = ...`.
+
+***
+
+## Building instances
+
+**factory\_boy**
+
+```python
+user  = UserFactory.build()
+users = UserFactory.build_batch(5)
+data  = UserFactory.stub()            # dict-like object
+```
+
+**seedling**
+
+```python
+user  = UserFactory.build()
+users = UserFactory.build_batch(5)
+data  = UserFactory.build_dict()      # plain dict
+```
+
+`build()` and `build_batch()` are synchronous in both libraries.
+
+***
+
+## Persisting instances
+
+**factory\_boy** (with factory\_boy-sqlalchemy)
+
+```python
+from factory.alchemy import SQLAlchemyModelFactory
+
+class UserFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = User
+        sqlalchemy_session = db_session
+
+    email = factory.Faker("email")
+
+user  = UserFactory.create()
+users = UserFactory.create_batch(5)
+```
+
+**seedling**
+
+```python
+from seedling import Factory, Faker
+
+class UserFactory(Factory[User]):
+    model = User
+    email = Faker("email")
+
+user  = await UserFactory.create(session)
+users = await UserFactory.create_batch(session, 5)
+```
+
+seedling always takes an explicit `session` argument — there is no global session to
+configure.
+
+***
+
+## LazyAttribute
+
+**factory\_boy**
+
+```python
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    email    = factory.Faker("email")
+    username = factory.LazyAttribute(lambda o: o.email.split("@")[0])
+```
+
+**seedling**
+
+```python
+class UserFactory(Factory[User]):
+    model    = User
+    email    = Faker("email")
+    username = LazyAttribute(lambda f: f["email"].split("@")[0])
+```
+
+seedling's `LazyAttribute` receives the partially-built field **dict** (`f`), not
+an object with attribute access. Use `f["field_name"]` to reference sibling fields.
+
+***
+
+## Sequence
+
+```python
+# factory_boy
+code = factory.Sequence(lambda n: f"item-{n}")
+
+# seedling (identical API)
+from seedling import Sequence
+code = Sequence(lambda n: f"item-{n}")
+```
+
+***
+
+## SubFactory
+
+```python
+# factory_boy
+class PostFactory(factory.Factory):
+    class Meta:
+        model = Post
+    author = factory.SubFactory(UserFactory)
+
+# seedling (identical API)
+from seedling import SubFactory
+class PostFactory(Factory[Post]):
+    model  = Post
+    author = SubFactory(UserFactory)
+```
+
+In seedling, `SubFactory` calls `UserFactory.create(session)` when the outer
+factory runs `create()`, and is skipped in `build()`.
+
+***
+
+## Traits
+
+**factory\_boy**
+
+```python
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    class Params:
+        admin = factory.Trait(
+            is_staff=True,
+        )
+
+user = UserFactory(admin=True)
+```
+
+**seedling**
+
+```python
+from seedling import Factory, Trait
+
+class UserFactory(Factory[User]):
+    model    = User
+    is_staff = False
+
+    class admin(Trait):
+        is_staff = True
+
+user = UserFactory.build(admin=True)
+```
+
+seedling `Trait` classes are **stackable**: pass multiple booleans to combine
+them. `trait_name=False` suppresses a trait without forwarding the kwarg to the model.
+
+***
+
+## `@post_generation`
+
+**factory\_boy**
+
+```python
+class UserFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = User
+
+    @factory.post_generation
+    def groups(self, create, extracted, **kwargs):
+        if not create or not extracted:
+            return
+        for group in extracted:
+            self.groups.add(group)
+```
+
+**seedling**
+
+```python
+from seedling import Factory, post_generation
+
+class UserFactory(Factory[User]):
+    model = User
+
+    @post_generation
+    async def assign_default_role(instance, session):
+        await RoleFactory.create(session, user_id=instance.id)
+```
+
+Key differences:
+
+* seedling hooks are `async` by default (sync functions are also accepted).
+* The hook receives `(instance, session)`, not `(self, create, extracted)`.
+* There is no `extracted` parameter — use `SubFactory` or `RelatedFactory` instead.
+* Hooks fire after the instance is flushed and refreshed in the DB.
+
+***
+
+## RelatedFactory
+
+**factory\_boy**
+
+```python
+class AuthorFactory(factory.Factory):
+    class Meta:
+        model = Author
+
+    default_book = factory.RelatedFactory(
+        BookFactory,
+        factory_related_name="author",
+    )
+```
+
+**seedling**
+
+```python
+from seedling import RelatedFactory
+
+class AuthorFactory(Factory[Author]):
+    model = Author
+    default_book = RelatedFactory(
+        BookFactory,
+        author_id=lambda inst: inst.id,
+    )
+```
+
+In seedling, callable kwargs receive the parent instance; non-callable kwargs are
+forwarded as-is.
+
+***
+
+## Bulk insert
+
+**factory\_boy** has no built-in bulk insert path.
+
+**seedling**
+
+```python
+# Per-row (hooks fire, SubFactory resolved)
+users = await UserFactory.create_batch(session, 1_000)
+
+# Bulk — uses INSERT ... RETURNING, much faster for large batches
+users = await UserFactory.create_batch(session, 100_000, bulk=True)
+```
+
+`bulk=True` limitations: `@post_generation` hooks and `RelatedFactory` /
+`RelatedFactoryList` do not fire. `SubFactory` and FK auto-resolve fields are
+omitted — supply them via overrides.
+
+***
+
+## AutoFactory — no factory\_boy equivalent
+
+seedling's `AutoFactory[T]` introspects the SQLAlchemy mapper and generates
+sensible defaults automatically:
+
+```python
+from seedling import AutoFactory
+
+class UserFactory(AutoFactory[User]):
+    model = User
+    # email → faker.email(), name → faker.name(), etc. (smart defaults on by default)
+```
+
+There is no equivalent in factory\_boy. It removes the need to declare every field
+explicitly for simple models.
+
+***
+
+## Faker descriptor
+
+**factory\_boy**
+
+```python
+email = factory.Faker("email")
+code  = factory.Faker("numerify", text="###-##")
+name  = factory.Faker("name", locale="fr_FR")
+```
+
+**seedling**
+
+```python
+from seedling import Faker
+email = Faker("email")
+code  = Faker("numerify", text="###-##")
+name  = Faker("name", locale="fr_FR")
+```
+
+Identical semantics; different import path.
+
+***
+
+## Deterministic output
+
+**factory\_boy**
+
+```python
+factory.random.reseed_random(42)
+```
+
+**seedling**
+
+```python
+UserFactory.seed(42)   # seeds faker and all Iterator descriptors
+```
+
+***
+
+## What seedling adds beyond factory\_boy
+
+| Feature | factory\_boy | seedling |
+|---------|-------------|---------|
+| Async create/create\_batch | ✗ | ✓ |
+| Explicit session argument | ✗ (global) | ✓ |
+| AutoFactory (mapper introspection) | ✗ | ✓ |
+| Bulk insert path | ✗ | ✓ (`bulk=True`) |
+| State tracking + audit log | ✗ | ✓ |
+| Seeder dependency runner | ✗ | ✓ |
+| CLI (`seed run`, `seed fresh`, etc.) | ✗ | ✓ |
+| `SelfAttribute`, `Iterator`, `Skip` | ✗ | ✓ |
+
+---
+
+---
+url: /seedling/latest/cookbook.md
+---
+# Cookbook
+
+Recipes for common patterns that go beyond the basics.
+
+***
+
+## Cyclic foreign keys
+
+Some schemas have mutually referencing tables — for example, a `Company` that has a
+`ceo_id` FK to `Person`, and a `Person` that has an `employer_id` FK to `Company`.
+Standard insertion order cannot satisfy both constraints simultaneously.
+
+**Solution: defer FK constraints (PostgreSQL), then break the cycle with a two-step insert.**
+
+```python
+from seedling import Seeder, deferred_constraints, DEV_AND_TEST
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
+from myapp.models import Company, Person
+
+class OrgChartSeeder(Seeder):
+    environments = DEV_AND_TEST
+    models = [Company, Person]
+
+    async def run(self, session: AsyncSession) -> None:
+        async with deferred_constraints(session):
+            # 1. Insert companies with no CEO yet
+            acme = Company(name="Acme Corp", ceo_id=None)
+            session.add(acme)
+            await session.flush()
+
+            # 2. Insert persons referencing the company
+            alice = Person(name="Alice", employer_id=acme.id)
+            session.add(alice)
+            await session.flush()
+
+            # 3. Update the company's CEO now that Alice has an id
+            acme.ceo_id = alice.id
+            await session.commit()
+```
+
+`deferred_constraints()` is a no-op on SQLite and MySQL/MariaDB — for those dialects,
+break the cycle by inserting with `NULL` and updating in a second statement (same
+pattern, no context manager needed).
+
+***
+
+## Polymorphic models
+
+### Single-table inheritance (STI)
+
+SQLAlchemy STI uses a `type` discriminator column to select the concrete class.
+Create one factory per concrete subclass:
+
+```python
+from sqlalchemy.orm import DeclarativeBase, mapped_column
+from sqlalchemy import String
+from seedling import Factory, Faker
+
+class Base(DeclarativeBase):
+    pass
+
+class Employee(Base):
+    __tablename__ = "employee"
+    id: int = mapped_column(primary_key=True)
+    name: str = mapped_column(String)
+    type: str = mapped_column(String)
+    __mapper_args__ = {"polymorphic_on": "type", "polymorphic_identity": "employee"}
+
+class Manager(Employee):
+    reports_count: int = mapped_column(default=0)
+    __mapper_args__ = {"polymorphic_identity": "manager"}
+
+class Engineer(Employee):
+    stack: str = mapped_column(String, nullable=True)
+    __mapper_args__ = {"polymorphic_identity": "engineer"}
+
+
+class ManagerFactory(Factory[Manager]):
+    model = Manager
+    name  = Faker("name")
+
+class EngineerFactory(Factory[Engineer]):
+    model   = Engineer
+    name    = Faker("name")
+    stack   = "Python"
+```
+
+Each factory targets the concrete subclass. SQLAlchemy fills in `type` automatically
+from `__mapper_args__["polymorphic_identity"]`.
+
+### Joined-table inheritance (JTI)
+
+JTI works the same way — declare a factory for each concrete subclass. The base-table
+columns are inherited through the normal SQLAlchemy mapper chain and you don't need to
+do anything special in the factory.
+
+***
+
+## JSONB and arrays (PostgreSQL)
+
+PostgreSQL JSONB and ARRAY columns are not covered by `AutoFactory` smart defaults.
+Declare them explicitly:
+
+```python
+from seedling import Factory, Faker, LazyAttribute
+from myapp.models import Article
+
+class ArticleFactory(Factory[Article]):
+    model    = Article
+    title    = Faker("sentence", nb_words=6)
+
+    # JSONB column
+    metadata = LazyAttribute(lambda f: {
+        "tags":    ["python", "async"],
+        "source":  "import",
+        "version": 1,
+    })
+
+    # ARRAY column
+    keywords = LazyAttribute(lambda f: [
+        Faker("word").generate({}),
+        Faker("word").generate({}),
+    ])
+```
+
+For randomised JSONB content, use `faker` inside `LazyAttribute`:
+
+```python
+from seedling import faker
+
+metadata = LazyAttribute(lambda f: {
+    "score":   faker.random_int(0, 100),
+    "tags":    faker.words(3),
+    "created": faker.iso8601(),
+})
+```
+
+***
+
+## Time-series data
+
+Seed rows with monotonically increasing or decreasing timestamps using `Sequence`
+and the `datetime` module:
+
+```python
+from datetime import UTC, datetime, timedelta
+from seedling import Factory, Sequence
+from myapp.models import Event
+
+_BASE_TIME = datetime(2026, 1, 1, tzinfo=UTC)
+
+class EventFactory(Factory[Event]):
+    model      = Event
+    name       = Sequence(lambda n: f"event-{n:04d}")
+    # Each event is 1 hour after the previous one
+    occurred_at = Sequence(lambda n: _BASE_TIME + timedelta(hours=n))
+```
+
+For the last N days of data, compute from the current time:
+
+```python
+from datetime import UTC, datetime, timedelta
+from seedling import Factory, Sequence
+
+class MetricFactory(Factory[Metric]):
+    model      = Metric
+    value      = Sequence(lambda n: float(n % 100))
+    recorded_at = Sequence(
+        lambda n: datetime.now(UTC) - timedelta(days=30) + timedelta(hours=n)
+    )
+```
+
+To seed a full 30-day window in a seeder:
+
+```python
+class MetricsSeeder(Seeder):
+    environments = DEV_AND_TEST
+    models = [Metric]
+
+    async def run(self, session: AsyncSession) -> None:
+        await MetricFactory.create_batch(session, 30 * 24)  # one per hour
+```
+
+***
+
+## Large tables
+
+### Use `bulk=True` for 10 000+ rows
+
+`create_batch(session, n, bulk=True)` uses a single `INSERT ... RETURNING` statement
+instead of N per-row round trips. It is significantly faster for large batches.
+
+```python
+await UserFactory.create_batch(session, 100_000, bulk=True)
+```
+
+**Limitations:** `@post_generation` hooks and `RelatedFactory` / `RelatedFactoryList`
+do not fire. `SubFactory` and FK auto-resolve fields are omitted — pass them as
+explicit overrides:
+
+```python
+await PostFactory.create_batch(session, 50_000, bulk=True, author_id=fixed_user_id)
+```
+
+### Disable state tracking for pure performance runs
+
+State tracking opens extra sessions per seeder to write state rows. Disable it when
+you only care about speed:
+
+```python
+runner = SeederRunner(session_factory, env="staging", state_tracking=False)
+```
+
+Or per-project:
+
+```toml
+[tool.seedling]
+state_tracking = false
+```
+
+### Chunked seeding for very large datasets
+
+If you need to seed tens of millions of rows, chunk the work to avoid memory pressure:
+
+```python
+class BigTableSeeder(Seeder):
+    environments = DEV_AND_TEST
+    models = [Event]
+
+    CHUNK_SIZE = 10_000
+    TOTAL      = 1_000_000
+
+    async def run(self, session: AsyncSession) -> None:
+        for _ in range(self.TOTAL // self.CHUNK_SIZE):
+            await EventFactory.create_batch(session, self.CHUNK_SIZE, bulk=True)
+```
+
+Each `create_batch` call issues one INSERT statement; the loop keeps peak memory
+proportional to `CHUNK_SIZE`, not `TOTAL`.
+
+### Parallel seeders for independent tables
+
+If you have multiple large tables with no FK relationship, register their seeders
+without `depends_on` — the runner will execute them in parallel:
+
+```python
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+    models = [User]
+    async def run(self, session):
+        await UserFactory.create_batch(session, 100_000, bulk=True)
+
+class ProductSeeder(Seeder):
+    environments = DEV_AND_TEST
+    models = [Product]
+    async def run(self, session):
+        await ProductFactory.create_batch(session, 500_000, bulk=True)
+
+# No depends_on — these run in parallel
+runner.register(UserSeeder, ProductSeeder)
+```
+
+***
+
+## Alembic post-upgrade hook
+
+Run seeders automatically after Alembic migrations by hooking into `env.py`:
+
+```python
+# alembic/env.py
+from alembic import context
+
+def run_migrations_online() -> None:
+    # ... standard async alembic setup ...
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
+
+    # After migrations complete, run seeders in the test environment
+    if context.get_x_argument(as_dictionary=True).get("seed"):
+        import asyncio
+        from myapp.seeders import create_runner
+        asyncio.run(create_runner("test").run())
+```
+
+Trigger it via:
+
+```bash
+alembic -x seed=true upgrade head
+```
+
+***
+
+## Transactional test fixtures
+
+Use `seedling_transactional_session` to get a session that auto-rolls back after each
+test, keeping the database clean without truncation:
+
+```python
+# conftest.py
+import pytest
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+@pytest.fixture(scope="session")
+def seedling_session_factory():
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    return async_sessionmaker(engine, expire_on_commit=False)
+
+
+# test_orders.py
+from seedling.pytest_plugin import seed
+
+@seed(UserSeeder, OrderSeeder)
+async def test_order_total(seedling_transactional_session):
+    session = seedling_transactional_session
+    # Both seeders ran before this test body.
+    # Any changes made in this test are rolled back automatically.
+    orders = await session.execute(select(Order))
+    ...
+```
+
+---
+
+---
+url: /seedling/latest/benchmarks.md
+---
+# Benchmarks
+
+All benchmarks run against an in-memory SQLite database on a single machine.
+SQLite has no network latency, so the absolute numbers are faster than a real
+PostgreSQL instance — but the **relative speedups are conservative**. Against
+a networked database the bulk insert and parallel execution gains are larger
+because each per-row round-trip carries real latency.
+
+To reproduce locally:
+
+```bash
+uv run python benchmarks/bench_create_batch.py --rows 1000
+uv run python benchmarks/bench_parallel.py
+```
+
+***
+
+## Bulk insert: `create_batch(bulk=True)`
+
+`create_batch(bulk=True)` uses a single `INSERT ... RETURNING` statement
+instead of N per-row `add` + `flush` calls.
+
+| Rows | Per-row | Bulk | Speedup |
+|-----:|--------:|-----:|--------:|
+| 100 | 0.044s | 0.006s | **7.3x** |
+| 1 000 | 0.412s | 0.055s | **7.6x** |
+| 5 000 | 2.116s | 0.278s | **7.6x** |
+
+The speedup stabilises around **7–8x** and holds linearly — bulk insert scales
+at ~18 000 rows/s vs ~2 400 rows/s per-row on SQLite. The gap widens further
+on PostgreSQL where each round-trip carries network overhead.
+
+**When to use `bulk=True`:** any batch larger than a few hundred rows where
+you don't need `@post_generation` hooks or `RelatedFactory` to fire.
+
+***
+
+## Parallel level execution
+
+Independent seeders (no `depends_on` relationship) run concurrently via
+`asyncio.gather`. The benchmark uses three seeders: Alpha and Beta run in
+parallel, then Gamma runs after both complete.
+
+| Mode | Time | Notes |
+|------|-----:|-------|
+| Parallel (default) | 0.219s | Alpha + Beta concurrent |
+| Sequential (`max_parallel=1`) | 0.245s | Alpha → Beta → Gamma |
+
+The SQLite in-memory numbers show only a modest gain because SQLite
+serialises writes internally. Against PostgreSQL the parallel advantage grows
+proportionally with the number of independent seeders and their individual
+durations — two 5-second seeders that run in parallel take 5s instead of 10s.
+
+***
+
+## Tracking over time
+
+Benchmark results are recorded automatically on every push to `main` and
+displayed as a time-series chart on the
+[GitHub Pages benchmark dashboard](https://arthurvasconcelos.github.io/seedling/dev/bench/).
+
+---
+
+---
+url: /seedling/latest/llms.md
+---
+# For LLMs
+
+sqlalchemy-seedling provides machine-readable documentation endpoints so AI assistants and LLM-powered tools can understand this library accurately.
+
+## llms.txt
+
+A concise index of the documentation — titles, descriptions, and links. Follows the [llms.txt standard](https://llmstxt.org/){target="\_blank"}.
+
+llms.txt
+
+## llms-full.txt
+
+The full content of every documentation page in a single plain-text file. Best for feeding directly into a context window.
+
+llms-full.txt
+
+## Per-page Markdown
+
+Append `.md` to any documentation URL to get that page as raw Markdown.
+
+/getting-started.md

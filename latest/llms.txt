@@ -1,0 +1,22 @@
+# sqlalchemy-seedling
+
+> Async-native seeder & factory library
+
+Built for SQLAlchemy 2.0+ async workflows — seed databases, generate fixtures, and run factories without the boilerplate.
+
+## Table of Contents
+
+
+### Other
+
+- [Benchmarks](/seedling/latest/benchmarks.md)
+- [CLI Reference](/seedling/latest/cli.md)
+- [Configuration](/seedling/latest/configuration.md)
+- [Cookbook](/seedling/latest/cookbook.md)
+- [Factories](/seedling/latest/factories.md)
+- [For LLMs](/seedling/latest/llms.md)
+- [Getting Started](/seedling/latest/getting-started.md)
+- [Migrate from factory\_boy](/seedling/latest/migration.md)
+- [Runner](/seedling/latest/runner.md)
+- [Seeders](/seedling/latest/seeders.md)
+- [State Tracking](/seedling/latest/state-tracking.md)

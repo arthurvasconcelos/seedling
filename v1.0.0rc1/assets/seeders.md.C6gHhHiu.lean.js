@@ -1,1 +1,0 @@
-import{c as i,Q as a,j as n,m as e}from"./chunks/framework.DEPoDpSh.js";const c=JSON.parse('{"title":"Seeders","description":"","frontmatter":{},"headers":[],"relativePath":"seeders.md","filePath":"seeders.md"}'),l={name:"seeders.md"};function t(p,s,h,r,k,d){return a(),n("div",null,[...s[0]||(s[0]=[e("",28)])])}const E=i(l,[["render",t]]);export{c as __pageData,E as default};
