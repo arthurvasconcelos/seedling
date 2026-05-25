@@ -20,7 +20,7 @@ export default defineConfig({
       {
         text: 'Guide',
         items: [
-          { text: 'Getting Started', link: '/' },
+          { text: 'Getting Started', link: '/getting-started' },
           { text: 'Seeders', link: '/seeders' },
           { text: 'Factories', link: '/factories' },
           { text: 'State Tracking', link: '/state-tracking' },
@@ -53,7 +53,7 @@ export default defineConfig({
     ],
 
     sidebar: [
-      { text: 'Getting Started', link: '/' },
+      { text: 'Getting Started', link: '/getting-started' },
       { text: 'Seeders', link: '/seeders' },
       { text: 'Factories', link: '/factories' },
       { text: 'State Tracking', link: '/state-tracking' },
@@ -71,6 +71,11 @@ export default defineConfig({
 
     search: {
       provider: 'local',
+    },
+
+    footer: {
+      message: 'Released under the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>.',
+      copyright: `Copyright © ${new Date().getFullYear()} Arthur Vasconcelos`,
     },
   },
 
