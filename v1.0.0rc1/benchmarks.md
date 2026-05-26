@@ -14,7 +14,37 @@ To reproduce locally:
 ```bash
 uv run python benchmarks/bench_create_batch.py --rows 1000
 uv run python benchmarks/bench_parallel.py
+uv run python benchmarks/bench_vs_alternatives.py --rows 1000
 ```
+
+***
+
+## vs raw SQLAlchemy and factory\_boy
+
+Same scenario in every row: insert N records into a single table with a string
+column and an int column, against a fresh in-memory SQLite database.
+
+| Scenario | 1 000 rows | rows/s | vs raw bulk |
+|---|---:|---:|---:|
+| raw SQLAlchemy (bulk insert) | 0.002s | 507 000 | **1.0x** (floor) |
+| Seedling `create_batch(bulk=True)` | 0.057s | 17 400 | 29x |
+| factory\_boy (sync) | 0.061s | 16 500 | 31x |
+| raw SQLAlchemy (per-row `add`) | 0.122s | 8 200 | 62x |
+| Seedling `create_batch()` (per-row) | 0.429s | 2 300 | 218x |
+
+Two honest takeaways:
+
+* **Bulk mode is competitive.** Seedling's `create_batch(bulk=True)` matches
+  factory\_boy on rows/s and stays within ~30x of the raw-SQL floor — while
+  giving you async, smart-defaults, and the rest of the API.
+* **Per-row mode is slower than factory\_boy.** Each row goes through
+  `flush` + `refresh` to keep `@post_generation` hooks and `RelatedFactory`
+  working against the live instance. If you don't need those, prefer
+  `bulk=True`. Closing this gap for per-row mode is on the roadmap.
+
+factory\_boy is measured against a sync engine because that's how it is
+actually used; the wall-clock number is what an async-app author experiences
+if they reach for that library.
 
 ***
 
