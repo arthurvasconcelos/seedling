@@ -1,6 +1,10 @@
 ---
 url: /seedling/latest/getting-started.md
+description: >-
+  Install sqlalchemy-seedling and seed your first SQLAlchemy database in five
+  minutes.
 ---
+
 # Getting Started
 
 ## Installation
@@ -212,7 +216,11 @@ All hooks are no-ops by default. `on_error` receives the exception but does not 
 
 ---
 url: /seedling/latest/factories.md
+description: >-
+  Define factories and AutoFactories to generate SQLAlchemy model instances for
+  tests and seeding, with traits, descriptors, and post-generation hooks.
 ---
+
 # Factories
 
 `Factory[T]` generates ORM model instances with realistic data for use in seeders and
@@ -936,7 +944,11 @@ async def test_with_users(seedling_runner):
 
 ---
 url: /seedling/latest/cli.md
+description: >-
+  Full CLI reference for the sqlalchemy-seedling seed command — run, fresh,
+  list, status, validate, graph, export, restore, init, and make subcommands.
 ---
+
 # CLI Reference
 
 The `seed` command is installed as an entry point when you install seedling.
@@ -1213,7 +1225,11 @@ If `SEEDLING_ALLOW_PROD=1` is not set, the command exits immediately with a non-
 
 ---
 url: /seedling/latest/configuration.md
+description: >-
+  Configure sqlalchemy-seedling via pyproject.toml — runner settings, state
+  tracking, and pytest plugin fixtures.
 ---
+
 # Configuration
 
 seedling is configured via `[tool.seedling]` in your project's `pyproject.toml`.

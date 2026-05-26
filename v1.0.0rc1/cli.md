@@ -1,6 +1,10 @@
 ---
 url: /seedling/v1.0.0rc1/cli.md
+description: >-
+  Full CLI reference for the sqlalchemy-seedling seed command — run, fresh,
+  list, status, validate, graph, export, restore, init, and make subcommands.
 ---
+
 # CLI Reference
 
 The `seed` command is installed as an entry point when you install seedling.

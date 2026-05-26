@@ -1,6 +1,10 @@
 ---
 url: /seedling/v1.0.0rc1/getting-started.md
+description: >-
+  Install sqlalchemy-seedling and seed your first SQLAlchemy database in five
+  minutes.
 ---
+
 # Getting Started
 
 ## Installation

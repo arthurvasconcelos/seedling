@@ -6,17 +6,25 @@ Built for SQLAlchemy 2.0+ async workflows — seed databases, generate fixtures,
 
 ## Table of Contents
 
+### Guide
+
+- [Getting Started](/seedling/v1.0.0rc1/getting-started.md): Install sqlalchemy-seedling and seed your first SQLAlchemy database in five minutes.
+- [Seeders](/seedling/v1.0.0rc1/seeders.md)
+- [Factories](/seedling/v1.0.0rc1/factories.md): Define factories and AutoFactories to generate SQLAlchemy model instances for tests and seeding, with traits, descriptors, and post-generation hooks.
+- [State Tracking](/seedling/v1.0.0rc1/state-tracking.md)
+- [Runner](/seedling/v1.0.0rc1/runner.md)
+
+### Reference
+
+- [CLI Reference](/seedling/v1.0.0rc1/cli.md): Full CLI reference for the sqlalchemy-seedling seed command — run, fresh, list, status, validate, graph, export, restore, init, and make subcommands.
+- [Configuration](/seedling/v1.0.0rc1/configuration.md): Configure sqlalchemy-seedling via pyproject.toml — runner settings, state tracking, and pytest plugin fixtures.
+
+### Resources
+
+- [Migrate from factory\_boy](/seedling/v1.0.0rc1/migration.md)
+- [Cookbook](/seedling/v1.0.0rc1/cookbook.md)
+- [Benchmarks](/seedling/v1.0.0rc1/benchmarks.md)
 
 ### Other
 
-- [Benchmarks](/seedling/v1.0.0rc1/benchmarks.md)
-- [CLI Reference](/seedling/v1.0.0rc1/cli.md)
-- [Configuration](/seedling/v1.0.0rc1/configuration.md)
-- [Cookbook](/seedling/v1.0.0rc1/cookbook.md)
-- [Factories](/seedling/v1.0.0rc1/factories.md)
 - [For LLMs](/seedling/v1.0.0rc1/llms.md)
-- [Getting Started](/seedling/v1.0.0rc1/getting-started.md)
-- [Migrate from factory\_boy](/seedling/v1.0.0rc1/migration.md)
-- [Runner](/seedling/v1.0.0rc1/runner.md)
-- [Seeders](/seedling/v1.0.0rc1/seeders.md)
-- [State Tracking](/seedling/v1.0.0rc1/state-tracking.md)

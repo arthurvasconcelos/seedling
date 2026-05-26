@@ -1,6 +1,10 @@
 ---
 url: /seedling/v1.0.0rc1/configuration.md
+description: >-
+  Configure sqlalchemy-seedling via pyproject.toml — runner settings, state
+  tracking, and pytest plugin fixtures.
 ---
+
 # Configuration
 
 seedling is configured via `[tool.seedling]` in your project's `pyproject.toml`.
