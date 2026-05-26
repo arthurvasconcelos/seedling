@@ -32,7 +32,7 @@ function dismiss() {
         target="_blank"
         rel="noopener noreferrer"
       >issue #1</a>.
-      Final 1.0 ships ~2026-06-02.
+      Final 1.0 ships ~2026-06-16.
     </span>
     <button
       class="rc-banner-dismiss"

@@ -4,7 +4,7 @@
 
 # sqlalchemy-seedling
 
-> **1.0 RC — feedback wanted.** Track feedback in [#1](https://github.com/arthurvasconcelos/seedling/issues/1). Final 1.0 ships ~2026-06-02.
+> **1.0 RC — feedback wanted.** Track feedback in [#1](https://github.com/arthurvasconcelos/seedling/issues/1). Final 1.0 ships ~2026-06-16.
 
 Async-native seeder and factory library for SQLAlchemy.
 Dependency-aware runners, declarative factories, and a full CLI — designed for the async Python ecosystem.
