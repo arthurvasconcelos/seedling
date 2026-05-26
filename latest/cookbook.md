@@ -270,8 +270,7 @@ runner.register(UserSeeder, ProductSeeder)
 
 Run seeders automatically after Alembic migrations by hooking into `env.py`:
 
-```python
-# alembic/env.py
+```python [alembic/env.py]
 from alembic import context
 
 def run_migrations_online() -> None:
@@ -301,8 +300,7 @@ alembic -x seed=true upgrade head
 Use `seedling_transactional_session` to get a session that auto-rolls back after each
 test, keeping the database clean without truncation:
 
-```python
-# conftest.py
+```python [conftest.py]
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 

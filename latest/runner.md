@@ -142,8 +142,7 @@ All three are no-ops by default. `on_run_error` does not suppress the exception.
 
 The `seedling_runner` fixture is provided by the pytest plugin:
 
-```python
-# conftest.py
+```python [conftest.py]
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 

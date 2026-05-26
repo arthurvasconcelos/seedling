@@ -42,8 +42,7 @@ runner = "myapp.seeders:create_runner"
 
 ### 3. Create a runner factory
 
-```python
-# myapp/seeders/__init__.py
+```python [myapp/seeders/__init__.py]
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from seedling import SeederRunner
 
@@ -57,8 +56,7 @@ def create_runner(env: str) -> SeederRunner:
 
 ### 4. Write a seeder
 
-```python
-# myapp/seeders/users.py
+```python [myapp/seeders/users.py]
 from seedling import Seeder, DEV_AND_TEST
 from sqlalchemy.ext.asyncio import AsyncSession
 from myapp.models import User
@@ -924,8 +922,7 @@ All three are no-ops by default. `on_run_error` does not suppress the exception.
 
 The `seedling_runner` fixture is provided by the pytest plugin:
 
-```python
-# conftest.py
+```python [conftest.py]
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -1248,8 +1245,7 @@ A `module:function` path to a factory function that creates and returns a `Seede
 
 The function receives one argument — the environment string (e.g. `"development"`, `"test"`, `"production"`) — and must return a configured `SeederRunner`.
 
-```python
-# myapp/seeders/__init__.py
+```python [myapp/seeders/__init__.py]
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from seedling import SeederRunner
 
@@ -1283,8 +1279,7 @@ runner = SeederRunner(session_factory, env=env, state_tracking=False)
 
 Override the `seedling_session_factory` fixture in your `conftest.py` to supply the session factory used by the `seedling_runner` fixture:
 
-```python
-# conftest.py
+```python [conftest.py]
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -1944,8 +1939,7 @@ runner.register(UserSeeder, ProductSeeder)
 
 Run seeders automatically after Alembic migrations by hooking into `env.py`:
 
-```python
-# alembic/env.py
+```python [alembic/env.py]
 from alembic import context
 
 def run_migrations_online() -> None:
@@ -1975,8 +1969,7 @@ alembic -x seed=true upgrade head
 Use `seedling_transactional_session` to get a session that auto-rolls back after each
 test, keeping the database clean without truncation:
 
-```python
-# conftest.py
+```python [conftest.py]
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 

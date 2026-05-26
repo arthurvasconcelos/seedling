@@ -23,8 +23,7 @@ A `module:function` path to a factory function that creates and returns a `Seede
 
 The function receives one argument — the environment string (e.g. `"development"`, `"test"`, `"production"`) — and must return a configured `SeederRunner`.
 
-```python
-# myapp/seeders/__init__.py
+```python [myapp/seeders/__init__.py]
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from seedling import SeederRunner
 
@@ -58,8 +57,7 @@ runner = SeederRunner(session_factory, env=env, state_tracking=False)
 
 Override the `seedling_session_factory` fixture in your `conftest.py` to supply the session factory used by the `seedling_runner` fixture:
 
-```python
-# conftest.py
+```python [conftest.py]
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
