@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779786402369,
+  "lastUpdate": 1779789705563,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -747,6 +747,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.6162,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "11c7b4a39e88004b3a08ea68a186db2a47121f8a",
+          "message": "docs: add competitor benchmarks and homepage comparison\n\nCompare Seedling against raw SQLAlchemy and factory_boy on a 1k-row\nsingle-table insert. Adds benchmarks/bench_vs_alternatives.py (one-shot,\nnot CI-tracked), a vs-alternatives table on the benchmarks page, and a\n\"How it compares\" section on the homepage with a feature/LOC matrix.\n\nHonest numbers: Seedling bulk matches factory_boy on rows/s; per-row mode\nis ~7x slower due to per-row flush+refresh, flagged as a roadmap item.\n\nAdds factory-boy to the dev dependency group for the benchmark.",
+          "timestamp": "2026-05-26T12:01:17+02:00",
+          "tree_id": "ae3ab7bf06c0a243734e56608563d830a15f9089",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/11c7b4a39e88004b3a08ea68a186db2a47121f8a"
+        },
+        "date": 1779789704848,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.0515,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.102,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.5468,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.6138,
             "unit": "seconds"
           }
         ]
