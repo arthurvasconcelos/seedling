@@ -30,3 +30,76 @@ features:
   - title: State Tracking
     details: seedling_state audit log with drift detection and --new-only skip so re-runs are fast and idempotent.
 ---
+
+## How it compares
+
+For an async SQLAlchemy 2.0 app that needs both **fixture factories** and a
+**seeder pipeline**, the alternatives are usually factory_boy plus a
+hand-rolled script. Here's the same job, three ways.
+
+### Seed 1 000 rows + run a dependent seeder
+
+::: code-group
+
+```python [Seedling]
+class UserFactory(AutoFactory[User]):
+    model = User
+
+class UserSeeder(Seeder):
+    environments = DEV_AND_TEST
+    async def run(self, session):
+        await UserFactory.create_batch(session, 1000, bulk=True)
+
+class ProfileSeeder(Seeder):
+    depends_on = [UserSeeder]
+    environments = DEV_AND_TEST
+    async def run(self, session): ...
+
+runner = SeederRunner(session_factory, env="development")
+runner.register(UserSeeder, ProfileSeeder)
+await runner.run()
+```
+
+```python [factory_boy + hand-rolled]
+class UserFactory(SQLAlchemyModelFactory):
+    class Meta:
+        model = User
+        sqlalchemy_session_persistence = "flush"
+    name = factory.Faker("name")
+    email = factory.Faker("email")
+    # ...every column declared manually
+
+# factory_boy is sync — bridge to async yourself
+def seed_users(sync_session):
+    UserFactory._meta.sqlalchemy_session = sync_session
+    UserFactory.create_batch(1000)
+
+def seed_profiles(sync_session): ...
+
+# Ordering, environments, idempotency, parallel — DIY
+seed_users(session)
+seed_profiles(session)
+```
+
+:::
+
+### Feature matrix
+
+| | Seedling | factory_boy | raw SQLAlchemy |
+|---|:---:|:---:|:---:|
+| Async-native API | ✅ | ❌ (sync only) | ✅ |
+| Zero-config field defaults from mapper | ✅ `AutoFactory` | ❌ declare each | ❌ |
+| Bulk `INSERT … RETURNING` path | ✅ `bulk=True` | ❌ | ✅ manual |
+| Seeder orchestration (`depends_on`) | ✅ | ❌ | ❌ |
+| Environment gating (dev / test / prod) | ✅ | ❌ | ❌ |
+| State tracking + drift detection | ✅ | ❌ | ❌ |
+| Parallel level execution | ✅ | ❌ | ❌ |
+| pytest fixtures + `@seed()` decorator | ✅ | ❌ | ❌ |
+| CLI (`seed run`, `fresh`, `graph`, …) | ✅ | ❌ | ❌ |
+| Per-row throughput (1 000 rows, SQLite) | 2 300 rows/s | **16 500 rows/s** | 8 200 rows/s |
+| Bulk throughput (1 000 rows, SQLite) | **17 400 rows/s** | — | 507 000 rows/s |
+
+Honest trade-off: factory_boy is **faster per-row** because its sync code path
+skips the `refresh` round-trip Seedling does after each insert. If you don't
+need `@post_generation` hooks on the live instance, use `bulk=True` and you
+match factory_boy. See the [benchmarks](/benchmarks) page for full numbers.
