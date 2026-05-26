@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779784842492,
+  "lastUpdate": 1779786402369,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -703,6 +703,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.6334,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "67a24c72b37c2736e52476c4edf9be5aee9e30bc",
+          "message": "docs: standardise VitePress config, upgrade deps, add favicon SVG\n\n- Rename config.ts to config.mts\n- Upgrade vitepress from ^1.3.0 to ^1.6.3\n- Add lang, cleanUrls, lastUpdated, editLink, transformHead (canonical URL + OG meta)\n- Add boostDocument to local search\n- Refactor sidebar into named typed function with grouped sections\n- Update logo to object form with alt text, favicon to SVG with type attribute\n- Update footer to link LICENSE file and author GitHub profile\n- Remove lineNumbers from markdown config\n- Add favicon.svg (hand-crafted from the logo)\n- Add description and outline frontmatter to key content pages",
+          "timestamp": "2026-05-26T11:06:20+02:00",
+          "tree_id": "e0ec310e53b5318ff5d693cd934beacd4f0cb668",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/67a24c72b37c2736e52476c4edf9be5aee9e30bc"
+        },
+        "date": 1779786401148,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 1.0496,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.102,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.5702,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.6162,
             "unit": "seconds"
           }
         ]
