@@ -53,6 +53,7 @@ seedling = "seedling.pytest_plugin"
 [dependency-groups]
 dev = [
     "aiosqlite>=0.20",
+    "asyncpg>=0.29",
     "black>=24",
     "factory-boy>=3.3",
     "isort>=5",
@@ -62,6 +63,7 @@ dev = [
     "pytest-asyncio>=0.23",
     "pytest-cov>=5",
     "ruff>=0.1",
+    "testcontainers[postgres]>=4.8",
 ]
 
 [tool.black]

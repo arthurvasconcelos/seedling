@@ -222,3 +222,23 @@ async def test_autofactory_create_batch(isolated_registry, session):
     authors = await AuthorFactory.create_batch(session, 3)
     assert len(authors) == 3
     assert len({a.id for a in authors}) == 3
+
+
+# ── introspection cache ─────────────────────────────────────────────────────
+
+
+def test_introspect_cache_is_set_after_first_call(isolated_registry):
+    class ItemAutoFactory(AutoFactory[Item]):
+        model = Item
+
+    ItemAutoFactory._introspect_model()
+    assert "_introspect_cache" in ItemAutoFactory.__dict__
+
+
+def test_introspect_returns_same_object_on_repeat_call(isolated_registry):
+    class ItemAutoFactory(AutoFactory[Item]):
+        model = Item
+
+    first = ItemAutoFactory._introspect_model()
+    second = ItemAutoFactory._introspect_model()
+    assert first is second

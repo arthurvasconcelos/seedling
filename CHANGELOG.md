@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-16
+
+### Changed
+
+- **Performance: per-row `create_batch()` is ~4× faster** for factories without
+  `@post_generation` hooks, `RelatedFactory`, or `SubFactory` fields. A new
+  batched-flush fast lane builds all instances first, then issues a single
+  `session.add_all()` + `flush()` — matching raw `session.add()` + single-flush
+  throughput (~8 000 rows/s on in-memory SQLite, up from ~2 400).
+
+- **Performance: `refresh()` is now automatically skipped** on models with no
+  server-side column defaults (`server_default`, `server_onupdate`, or `Computed`
+  columns). SQLAlchemy already populates the primary key from `cursor.lastrowid`
+  or the `RETURNING` clause after `flush()`. The inspection result is cached per
+  factory class.
+
+- **Performance: `AutoFactory._introspect_model()` is now cached per class.**
+  Previously the mapper was re-inspected on every `create()` call. The cached
+  result is stored as a class attribute on first access.
+
+- **Behaviour change — `before_flush` / `after_flush` event frequency:**
+  `create_batch()` may now invoke these SQLAlchemy session events **once per
+  batch** (not once per row) when the fast lane is active. Factories that declare
+  hooks or related factories are unaffected and continue to flush per row.
+
+### Added
+
+- **`benchmarks/bench_vs_alternatives.py --postgres`** — new flag that runs the
+  vs-alternatives benchmark against a real PostgreSQL instance via
+  `testcontainers[postgres]`. Requires Docker. Default (SQLite) behaviour is
+  unchanged.
+
+- **`docs/performance.md`** — new performance guide covering the three factory
+  code paths (bulk, auto-fast, slow), the refresh-skip heuristic, smart-defaults
+  trade-off, and a decision matrix for choosing the right path.
+
+- **`testcontainers[postgres]` and `asyncpg`** added to the `dev` dependency
+  group.
+
 ## [1.0.0rc1] - 2026-05-02
 
 ### Added

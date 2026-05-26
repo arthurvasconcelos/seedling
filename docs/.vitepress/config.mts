@@ -32,6 +32,7 @@ function sidebarMain(): DefaultTheme.SidebarItem[] {
     {
       text: 'Resources',
       items: [
+        { text: 'Performance guide', link: '/performance' },
         { text: 'Migrate from factory_boy', link: '/migration' },
         { text: 'Cookbook', link: '/cookbook' },
         { text: 'Benchmarks', link: '/benchmarks' },
@@ -100,6 +101,7 @@ export default defineConfig({
       {
         text: 'Resources',
         items: [
+          { text: 'Performance guide', link: '/performance' },
           { text: 'Migrate from factory_boy', link: '/migration' },
           { text: 'Cookbook', link: '/cookbook' },
           { text: 'Benchmarks', link: '/benchmarks' },

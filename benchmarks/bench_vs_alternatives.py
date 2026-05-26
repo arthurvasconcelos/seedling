@@ -2,7 +2,8 @@
 Benchmark: Seedling vs raw SQLAlchemy vs factory_boy.
 
 Same scenario in every scenario — insert N rows into a single table with two
-columns (a string and an int) — measured from a clean in-memory SQLite DB.
+columns (a string and an int) — measured from a clean in-memory SQLite DB
+(default) or a real PostgreSQL instance via testcontainers (--postgres).
 
 Fairness notes (read before sharing numbers):
 
@@ -14,11 +15,16 @@ Fairness notes (read before sharing numbers):
   PostgreSQL where each round-trip pays real network latency. The bulk-insert
   gap widens further on a networked DB.
 - Each scenario uses a fresh engine + schema to avoid cache contamination.
+- Both Seedling and factory_boy use Sequence-based field generators so the
+  comparison is apples-to-apples for throughput. Smart defaults (Faker) are
+  an AutoFactory feature tested separately.
 
 Usage:
     uv run python benchmarks/bench_vs_alternatives.py
     uv run python benchmarks/bench_vs_alternatives.py --rows 5000
     uv run python benchmarks/bench_vs_alternatives.py --json
+    uv run python benchmarks/bench_vs_alternatives.py --postgres
+    uv run python benchmarks/bench_vs_alternatives.py --postgres --rows 500
 """
 
 from __future__ import annotations
@@ -35,7 +41,7 @@ from sqlalchemy import String, create_engine, insert
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
-from seedling import AutoFactory
+from seedling import AutoFactory, Sequence
 
 
 class Base(DeclarativeBase):
@@ -51,6 +57,11 @@ class Item(Base):
 
 class SeedlingItemFactory(AutoFactory[Item]):
     model = Item
+    # Use Sequence (same as factory_boy) so the comparison is apples-to-apples.
+    # Smart defaults (Faker) demonstrate AutoFactory's field-inference feature;
+    # they are not the subject of this throughput benchmark.
+    name = Sequence(lambda n: f"name-{n}")
+    value = Sequence(lambda n: n)
 
 
 class FactoryBoyItemFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -62,6 +73,16 @@ class FactoryBoyItemFactory(factory.alchemy.SQLAlchemyModelFactory):
     value = factory.Sequence(lambda n: n)
 
 
+# ── session factories ─────────────────────────────────────────────────────────
+
+_pg_url: str | None = None
+
+
+def _set_pg_url(url: str) -> None:
+    global _pg_url
+    _pg_url = url
+
+
 def _fresh_sync_session() -> Session:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
@@ -69,10 +90,14 @@ def _fresh_sync_session() -> Session:
 
 
 async def _fresh_async_session_factory() -> async_sessionmaker:
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+    url = _pg_url or "sqlite+aiosqlite:///:memory:"
+    engine = create_async_engine(url, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     return async_sessionmaker(engine, expire_on_commit=False)
+
+
+# ── scenario functions ────────────────────────────────────────────────────────
 
 
 async def bench_raw_sqlalchemy_bulk(rows: int) -> float:
@@ -138,13 +163,43 @@ async def run(rows: int) -> list[tuple[str, float]]:
     return results
 
 
+def _print_results(results: list[tuple[str, float]], rows: int, db_label: str) -> None:
+    baseline = next(t for n, t in results if n == "raw SQLAlchemy (bulk insert)")
+    print(f"Rows: {rows:,}  ({db_label}, single machine)\n")
+    name_w = max(len(n) for n, _ in results)
+    print(f"  {'scenario'.ljust(name_w)}    time     rows/s    vs raw bulk")
+    print(f"  {'-' * name_w}    -----    ------    -----------")
+    for name, elapsed in results:
+        rate = rows / elapsed
+        ratio = elapsed / baseline
+        print(f"  {name.ljust(name_w)}  {elapsed:6.3f}s  {rate:8,.0f}    {ratio:5.2f}x")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rows", type=int, default=1_000)
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--postgres",
+        action="store_true",
+        help="Run against a real PostgreSQL instance via testcontainers (requires Docker).",
+    )
     args = parser.parse_args()
 
-    results = asyncio.run(run(args.rows))
+    if args.postgres:
+        from testcontainers.postgres import PostgresContainer
+
+        with PostgresContainer("postgres:16-alpine") as pg:
+            sync_url = pg.get_connection_url()
+            async_url = sync_url.replace("psycopg2", "asyncpg", 1).replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
+            _set_pg_url(async_url)
+            results = asyncio.run(run(args.rows))
+        db_label = "PostgreSQL via testcontainers"
+    else:
+        results = asyncio.run(run(args.rows))
+        db_label = "in-memory SQLite"
 
     if args.json:
         print(
@@ -160,14 +215,4 @@ if __name__ == "__main__":
             )
         )
     else:
-        baseline = next(t for n, t in results if n == "raw SQLAlchemy (bulk insert)")
-        print(f"Rows: {args.rows:,}  (in-memory SQLite, single machine)\n")
-        name_w = max(len(n) for n, _ in results)
-        print(f"  {'scenario'.ljust(name_w)}    time     rows/s    vs raw bulk")
-        print(f"  {'-' * name_w}    -----    ------    -----------")
-        for name, elapsed in results:
-            rate = args.rows / elapsed
-            ratio = elapsed / baseline
-            print(
-                f"  {name.ljust(name_w)}  {elapsed:6.3f}s  {rate:8,.0f}    {ratio:5.2f}x"
-            )
+        _print_results(results, args.rows, db_label)

@@ -524,6 +524,59 @@ class Factory(Generic[T]):
         return [cls.build(**overrides) for _ in range(count)]
 
     @classmethod
+    def _needs_refresh(cls) -> bool:
+        """True if the model has any column that requires post-flush DB refresh.
+
+        Cached per class. Conservative on unmappable models (returns True).
+        """
+        if "_refresh_cache" in cls.__dict__:
+            return bool(cls.__dict__["_refresh_cache"])
+        try:
+            mapper: Any = sa_inspect(cls.model)
+        except Exception:
+            cls._refresh_cache = True  # type: ignore[attr-defined]
+            return True
+        needs = False
+        for col_attr in mapper.mapper.column_attrs:
+            for col in col_attr.columns:
+                if col.server_default is not None:
+                    needs = True
+                    break
+                if col.server_onupdate is not None:
+                    needs = True
+                    break
+                if getattr(col, "computed", None) is not None:
+                    needs = True
+                    break
+            if needs:
+                break
+        cls._refresh_cache = needs  # type: ignore[attr-defined]
+        return needs
+
+    @classmethod
+    def _can_use_fast_batch(cls) -> bool:
+        """True if create_batch() can use a single-flush fast path.
+
+        False when the factory has post_generation hooks, RelatedFactory /
+        RelatedFactoryList descriptors, or SubFactory / _FKSubFactory fields
+        that require per-row DB interaction.  Cached per class.
+        """
+        if "_fast_batch_cache" in cls.__dict__:
+            return bool(cls.__dict__["_fast_batch_cache"])
+        if cls._get_post_generation_hooks():
+            cls._fast_batch_cache = False  # type: ignore[attr-defined]
+            return False
+        if cls._get_related_factories():
+            cls._fast_batch_cache = False  # type: ignore[attr-defined]
+            return False
+        for descriptor in cls._get_declared_fields().values():
+            if isinstance(descriptor, SubFactory | _FKSubFactory):
+                cls._fast_batch_cache = False  # type: ignore[attr-defined]
+                return False
+        cls._fast_batch_cache = True  # type: ignore[attr-defined]
+        return True
+
+    @classmethod
     async def create(cls, session: AsyncSession, **overrides: Any) -> T:
         """Build and persist an instance. Caller is responsible for committing."""
         from seedling.exceptions import AutoFactoryResolutionError
@@ -602,7 +655,8 @@ class Factory(Generic[T]):
         instance: T = cast(T, cls.model(**built))
         session.add(instance)
         await session.flush()
-        await session.refresh(instance)
+        if cls._needs_refresh():
+            await session.refresh(instance)
 
         for hook in cls._get_post_generation_hooks():
             result = hook.func(instance, session)
@@ -635,19 +689,41 @@ class Factory(Generic[T]):
         - ``RelatedFactory`` / ``RelatedFactoryList`` do **not** fire.
         - ``SubFactory`` and FK-auto-resolve fields are omitted from the insert
           dict (the caller must supply those values via overrides).
+
+        The default per-row path (``bulk=False``) uses a batched-flush fast
+        lane when the factory has no post-generation hooks, no related factories,
+        and no SubFactory / FK-auto-resolve fields.  This reduces async round-
+        trips from N flushes to one, matching raw ``session.add()`` throughput.
+        Factories with hooks or related factories fall back to a per-row loop.
+
+        **Behaviour note:** ``before_flush`` / ``after_flush`` session events
+        may fire once per batch (not once per row) when the fast lane is active.
         """
-        if not bulk:
-            return [await cls.create(session, **overrides) for _ in range(count)]
+        if bulk:
+            dicts = [cls._build_dict(**overrides) for _ in range(count)]
+            if not dicts:
+                return []
+            from sqlalchemy.engine import ScalarResult
 
-        dicts = [cls._build_dict(**overrides) for _ in range(count)]
-        if not dicts:
-            return []
-        from sqlalchemy.engine import ScalarResult
+            scalars: ScalarResult[T] = await session.scalars(
+                sa_insert(cls.model).returning(cls.model), dicts
+            )
+            return list(scalars.all())
 
-        scalars: ScalarResult[T] = await session.scalars(
-            sa_insert(cls.model).returning(cls.model), dicts
-        )
-        return list(scalars.all())
+        if cls._can_use_fast_batch():
+            if count == 0:
+                return []
+            instances = [
+                cls.model(**cls._build_dict(**overrides)) for _ in range(count)
+            ]
+            session.add_all(instances)
+            await session.flush()
+            if cls._needs_refresh():
+                for inst in instances:
+                    await session.refresh(inst)
+            return instances
+
+        return [await cls.create(session, **overrides) for _ in range(count)]
 
 
 def get_factory(model: type) -> type[Factory[Any]] | None:
@@ -756,6 +832,14 @@ class AutoFactory(Factory[T]):
 
     @classmethod
     def _introspect_model(cls) -> dict[str, Any]:
+        if "_introspect_cache" in cls.__dict__:
+            return cls.__dict__["_introspect_cache"]  # type: ignore[no-any-return]
+        fields = cls._introspect_model_uncached()
+        cls._introspect_cache = fields  # type: ignore[attr-defined]
+        return fields
+
+    @classmethod
+    def _introspect_model_uncached(cls) -> dict[str, Any]:
         model = vars(cls).get("model") or getattr(cls, "model", None)
         if model is None:
             return {}
