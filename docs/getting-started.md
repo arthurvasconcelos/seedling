@@ -1,3 +1,7 @@
+---
+description: Install sqlalchemy-seedling and seed your first SQLAlchemy database in five minutes.
+---
+
 # Getting Started
 
 ## Installation
@@ -35,8 +39,7 @@ runner = "myapp.seeders:create_runner"
 
 ### 3. Create a runner factory
 
-```python
-# myapp/seeders/__init__.py
+```python [myapp/seeders/__init__.py]
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from seedling import SeederRunner
 
@@ -50,8 +53,7 @@ def create_runner(env: str) -> SeederRunner:
 
 ### 4. Write a seeder
 
-```python
-# myapp/seeders/users.py
+```python [myapp/seeders/users.py]
 from seedling import Seeder, DEV_AND_TEST
 from sqlalchemy.ext.asyncio import AsyncSession
 from myapp.models import User

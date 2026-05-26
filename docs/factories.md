@@ -1,3 +1,8 @@
+---
+description: Define factories and AutoFactories to generate SQLAlchemy model instances for tests and seeding, with traits, descriptors, and post-generation hooks.
+outline: deep
+---
+
 # Factories
 
 `Factory[T]` generates ORM model instances with realistic data for use in seeders and

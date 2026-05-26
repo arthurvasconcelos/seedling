@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run *)",
+      "Bash(gh pr *)",
+      "Bash(curl -s \"https://api.github.com/repos/vuejs/vitepress/contents/docs\")",
+      "Bash(curl -s https://raw.githubusercontent.com/vuejs/vitepress/main/docs/en/reference/site-config.md)",
+      "Bash(curl *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(find /Users/arthurvasconcelos/repos/personal/a11y-hud/docs/.vitepress -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.mts\" -o -name \"*.vue\" -o -name \"*.css\" -o -name \"*.json\" 2>/dev/null | head -50)",
+      "Read(//Users/arthurvasconcelos/repos/personal/a11y-hud/docs/.vitepress/**)",
+      "Bash(gh api *)",
+      "Bash(gh run *)",
+      "Bash(git -C /Users/arthurvasconcelos/repos/personal/a11y-hud show fc3c7e2b1e5d6967c760fad1fcf8c98290240f95 -- docs/.vitepress/config.mts)",
+      "Bash(git -C /Users/arthurvasconcelos/repos/personal/a11y-hud show fc3c7e2b1e5d6967c760fad1fcf8c98290240f95 -- docs/.vitepress/theme/index.ts)",
+      "Bash(git -C /Users/arthurvasconcelos/repos/personal/a11y-hud show fc3c7e2b1e5d6967c760fad1fcf8c98290240f95 -- docs/.vitepress/theme/custom.css)",
+      "Bash(git -C /Users/arthurvasconcelos/repos/personal/a11y-hud show fc3c7e2b1e5d6967c760fad1fcf8c98290240f95 -- docs/llms.md)",
+      "Bash(git -C /Users/arthurvasconcelos/repos/personal/a11y-hud show fc3c7e2b1e5d6967c760fad1fcf8c98290240f95 -- package.json)",
+      "Bash(git -C /Users/arthurvasconcelos/repos/personal/a11y-hud show fc3c7e2b1e5d6967c760fad1fcf8c98290240f95 -- docs/.vitepress/theme/MarkdownButtons.vue)"
+    ]
+  }
+}
