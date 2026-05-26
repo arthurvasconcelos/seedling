@@ -1,6 +1,7 @@
 ---
 url: /seedling/latest/llms.md
 ---
+
 # For LLMs
 
 sqlalchemy-seedling provides machine-readable documentation endpoints so AI assistants and LLM-powered tools can understand this library accurately.
