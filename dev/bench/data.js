@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779789705563,
+  "lastUpdate": 1779877472640,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -791,6 +791,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.6138,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "973aced4157bb00d30895f96ae6ff28e180d41f1",
+          "message": "ci: re-trigger workflows after GH service outage",
+          "timestamp": "2026-05-27T12:24:14+02:00",
+          "tree_id": "182e0e0c570f25806ba0e05d3a81437bc3209fd4",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/973aced4157bb00d30895f96ae6ff28e180d41f1"
+        },
+        "date": 1779877471754,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.3835,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1095,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.1836,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.2559,
             "unit": "seconds"
           }
         ]
