@@ -19,12 +19,13 @@ important ways:
 import factory
 from myapp.models import User
 
+
 class UserFactory(factory.Factory):
     class Meta:
         model = User
 
     email = factory.Faker("email")
-    name  = factory.Faker("name")
+    name = factory.Faker("name")
 ```
 
 **seedling**
@@ -33,10 +34,11 @@ class UserFactory(factory.Factory):
 from seedling import Factory, Faker
 from myapp.models import User
 
+
 class UserFactory(Factory[User]):
     model = User
     email = Faker("email")
-    name  = Faker("name")
+    name = Faker("name")
 ```
 
 The `model` class attribute replaces `class Meta: model = ...`.
@@ -48,17 +50,17 @@ The `model` class attribute replaces `class Meta: model = ...`.
 **factory_boy**
 
 ```python
-user  = UserFactory.build()
+user = UserFactory.build()
 users = UserFactory.build_batch(5)
-data  = UserFactory.stub()            # dict-like object
+data = UserFactory.stub()  # dict-like object
 ```
 
 **seedling**
 
 ```python
-user  = UserFactory.build()
+user = UserFactory.build()
 users = UserFactory.build_batch(5)
-data  = UserFactory.build_dict()      # plain dict
+data = UserFactory.build_dict()  # plain dict
 ```
 
 `build()` and `build_batch()` are synchronous in both libraries.
@@ -72,6 +74,7 @@ data  = UserFactory.build_dict()      # plain dict
 ```python
 from factory.alchemy import SQLAlchemyModelFactory
 
+
 class UserFactory(SQLAlchemyModelFactory):
     class Meta:
         model = User
@@ -79,7 +82,8 @@ class UserFactory(SQLAlchemyModelFactory):
 
     email = factory.Faker("email")
 
-user  = UserFactory.create()
+
+user = UserFactory.create()
 users = UserFactory.create_batch(5)
 ```
 
@@ -88,11 +92,13 @@ users = UserFactory.create_batch(5)
 ```python
 from seedling import Factory, Faker
 
+
 class UserFactory(Factory[User]):
     model = User
     email = Faker("email")
 
-user  = await UserFactory.create(session)
+
+user = await UserFactory.create(session)
 users = await UserFactory.create_batch(session, 5)
 ```
 
@@ -110,7 +116,7 @@ class UserFactory(factory.Factory):
     class Meta:
         model = User
 
-    email    = factory.Faker("email")
+    email = factory.Faker("email")
     username = factory.LazyAttribute(lambda o: o.email.split("@")[0])
 ```
 
@@ -118,8 +124,8 @@ class UserFactory(factory.Factory):
 
 ```python
 class UserFactory(Factory[User]):
-    model    = User
-    email    = Faker("email")
+    model = User
+    email = Faker("email")
     username = LazyAttribute(lambda f: f["email"].split("@")[0])
 ```
 
@@ -136,6 +142,7 @@ code = factory.Sequence(lambda n: f"item-{n}")
 
 # seedling (identical API)
 from seedling import Sequence
+
 code = Sequence(lambda n: f"item-{n}")
 ```
 
@@ -148,12 +155,16 @@ code = Sequence(lambda n: f"item-{n}")
 class PostFactory(factory.Factory):
     class Meta:
         model = Post
+
     author = factory.SubFactory(UserFactory)
+
 
 # seedling (identical API)
 from seedling import SubFactory
+
+
 class PostFactory(Factory[Post]):
-    model  = Post
+    model = Post
     author = SubFactory(UserFactory)
 ```
 
@@ -176,6 +187,7 @@ class UserFactory(factory.Factory):
             is_staff=True,
         )
 
+
 user = UserFactory(admin=True)
 ```
 
@@ -184,12 +196,14 @@ user = UserFactory(admin=True)
 ```python
 from seedling import Factory, Trait
 
+
 class UserFactory(Factory[User]):
-    model    = User
+    model = User
     is_staff = False
 
     class admin(Trait):
         is_staff = True
+
 
 user = UserFactory.build(admin=True)
 ```
@@ -220,6 +234,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 ```python
 from seedling import Factory, post_generation
+
 
 class UserFactory(Factory[User]):
     model = User
@@ -256,6 +271,7 @@ class AuthorFactory(factory.Factory):
 
 ```python
 from seedling import RelatedFactory
+
 
 class AuthorFactory(Factory[Author]):
     model = Author
@@ -298,6 +314,7 @@ sensible defaults automatically:
 ```python
 from seedling import AutoFactory
 
+
 class UserFactory(AutoFactory[User]):
     model = User
     # email → faker.email(), name → faker.name(), etc. (smart defaults on by default)
@@ -314,17 +331,18 @@ explicitly for simple models.
 
 ```python
 email = factory.Faker("email")
-code  = factory.Faker("numerify", text="###-##")
-name  = factory.Faker("name", locale="fr_FR")
+code = factory.Faker("numerify", text="###-##")
+name = factory.Faker("name", locale="fr_FR")
 ```
 
 **seedling**
 
 ```python
 from seedling import Faker
+
 email = Faker("email")
-code  = Faker("numerify", text="###-##")
-name  = Faker("name", locale="fr_FR")
+code = Faker("numerify", text="###-##")
+name = Faker("name", locale="fr_FR")
 ```
 
 Identical semantics; different import path.
@@ -342,7 +360,7 @@ factory.random.reseed_random(42)
 **seedling**
 
 ```python
-UserFactory.seed(42)   # seeds faker and all Iterator descriptors
+UserFactory.seed(42)  # seeds faker and all Iterator descriptors
 ```
 
 ---

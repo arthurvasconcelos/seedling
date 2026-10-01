@@ -4,8 +4,6 @@
 
 # sqlalchemy-seedling
 
-> **1.0 RC — feedback wanted.** Track feedback in [#1](https://github.com/arthurvasconcelos/seedling/issues/1). Final 1.0 ships ~2026-06-16.
-
 Async-native seeder and factory library for SQLAlchemy.
 Dependency-aware runners, declarative factories, and a full CLI — designed for the async Python ecosystem.
 
@@ -15,6 +13,7 @@ Dependency-aware runners, declarative factories, and a full CLI — designed for
 [![CI](https://github.com/arthurvasconcelos/seedling/actions/workflows/ci.yml/badge.svg)](https://github.com/arthurvasconcelos/seedling/actions)
 [![Coverage](https://codecov.io/gh/arthurvasconcelos/seedling/graph/badge.svg)](https://codecov.io/gh/arthurvasconcelos/seedling)
 [![Downloads](https://img.shields.io/pypi/dm/sqlalchemy-seedling)](https://pypi.org/project/sqlalchemy-seedling/)
+[![Stable since 2026-10-01](https://img.shields.io/badge/stable%20since-2026--10--01-brightgreen)](https://github.com/arthurvasconcelos/seedling/blob/main/CHANGELOG.md)
 
 ---
 
@@ -65,6 +64,7 @@ from seedling import Seeder, DEV_AND_TEST
 from sqlalchemy.ext.asyncio import AsyncSession
 from myapp.models import User
 
+
 class UserSeeder(Seeder):
     environments = DEV_AND_TEST
     models = [User]
@@ -79,12 +79,12 @@ class UserSeeder(Seeder):
 from seedling import Seeder, DEV_AND_TEST
 from seeders.users import UserSeeder
 
+
 class PostSeeder(Seeder):
-    depends_on = [UserSeeder]       # runs after UserSeeder automatically
+    depends_on = [UserSeeder]  # runs after UserSeeder automatically
     environments = DEV_AND_TEST
 
-    async def run(self, session: AsyncSession) -> None:
-        ...
+    async def run(self, session: AsyncSession) -> None: ...
 ```
 
 ### Create a runner factory
@@ -95,6 +95,7 @@ from seedling import SeederRunner
 from myapp.db import async_session_maker
 from .users import UserSeeder
 from .posts import PostSeeder
+
 
 def create_runner(env: str = "development") -> SeederRunner:
     runner = SeederRunner(session_factory=async_session_maker, env=env)
@@ -127,18 +128,20 @@ seed list                         # print execution order without running
 ```python
 from seedling import Factory, Faker, LazyAttribute, Sequence, SubFactory, Trait
 
+
 class UserFactory(Factory[User]):
     model = User
     email = Faker("email")
-    name  = Sequence(lambda n: f"User {n}")
+    name = Sequence(lambda n: f"User {n}")
 
     class admin(Trait):
         is_superuser = True
 
+
 class PostFactory(Factory[Post]):
     model = Post
     author = SubFactory(UserFactory)
-    title  = Faker("sentence")
+    title = Faker("sentence")
 ```
 
 ```python
@@ -146,11 +149,11 @@ class PostFactory(Factory[Post]):
 user = UserFactory.build(admin=True)
 
 # Persisted
-user  = await UserFactory.create(session)
+user = await UserFactory.create(session)
 posts = await PostFactory.create_batch(session, 5)
 
 # Fast bulk insert — no hooks fired, no SubFactory resolution
-rows  = await UserFactory.create_batch(session, 10_000, bulk=True)
+rows = await UserFactory.create_batch(session, 10_000, bulk=True)
 ```
 
 `AutoFactory[T]` generates sensible defaults from mapper introspection, with
@@ -168,11 +171,11 @@ class UserFactory(AutoFactory[User]):
 ```python
 from seedling import upsert, truncate_tables, reset_sequences, deferred_constraints
 
-await upsert(session, User, {"id": 1, "email": "a@b.com"})   # idempotent insert
-await truncate_tables(session, User, Post, cascade=True)      # dialect-aware TRUNCATE
-await reset_sequences(session, User)                          # PostgreSQL: reset SERIAL
+await upsert(session, User, {"id": 1, "email": "a@b.com"})  # idempotent insert
+await truncate_tables(session, User, Post, cascade=True)  # dialect-aware TRUNCATE
+await reset_sequences(session, User)  # PostgreSQL: reset SERIAL
 
-async with deferred_constraints(session):                     # PostgreSQL: defer FKs
+async with deferred_constraints(session):  # PostgreSQL: defer FKs
     ...
 ```
 
@@ -208,10 +211,11 @@ def seedling_session_factory():
 ```python
 from seedling.pytest_plugin import seed
 
+
 @seed(UserSeeder)
 async def test_with_user(seedling_transactional_session):
-    # UserSeeder ran before the test body;
-    # session is rolled back automatically after the test
+    # UserSeeder ran before the test body (committed by the runner);
+    # anything done through this session is rolled back after the test
     ...
 ```
 

@@ -25,6 +25,7 @@ The function receives one argument — the environment string (e.g. `"developmen
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from seedling import SeederRunner
 
+
 def create_runner(env: str) -> SeederRunner:
     engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/mydb")
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -58,6 +59,7 @@ Override the `seedling_session_factory` fixture in your `conftest.py` to supply 
 ```python [conftest.py]
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
 
 @pytest.fixture(scope="session")
 def seedling_session_factory():

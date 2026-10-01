@@ -27,11 +27,10 @@ from seedling.helpers import (
     truncate_tables,
     upsert,
 )
-from seedling.resolver import resolve_with_deps, topological_levels, topological_sort
 from seedling.runner import SeederRunner
 from seedling.seeder import Seeder
 
-__version__ = "1.0.0rc1"
+__version__ = "1.0.0"
 
 __all__ = [
     # Core
@@ -58,10 +57,6 @@ __all__ = [
     "truncate_tables",
     "reset_sequences",
     "deferred_constraints",
-    # Resolver (exposed for testing / advanced use)
-    "topological_levels",
-    "topological_sort",
-    "resolve_with_deps",
     # Exceptions
     "AutoFactoryResolutionError",
     "CircularDependencyError",

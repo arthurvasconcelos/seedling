@@ -1,7 +1,8 @@
 # Roadmap
 
-sqlalchemy-seedling shipped its 1.0 release candidate in May 2026. Below is the
-history of phases and what each one delivered.
+sqlalchemy-seedling reached 1.0 in October 2026 after a release-candidate
+period that started in May 2026. Below is the history of phases and what each
+one delivered.
 
 ## 0.2 — Foundations & Polish *(shipped)*
 
@@ -36,13 +37,20 @@ introspection), `seed restore` (inverse of `seed export`), optional YAML
 support, tag-based filtering, and a `seedling_transactional_session` pytest
 fixture that wraps each test in a SAVEPOINT and rolls back.
 
-## 1.0 RC — Stabilization & Docs *(current)*
+## 1.0 — Stabilization & Docs *(shipped)*
 
 API freeze, migration guide from factory_boy, a cookbook covering common
 patterns (cyclic FKs, JSONB, polymorphic models, large tables), example apps
-(FastAPI + Alembic, Litestar, plain script), performance benchmarks, and
-mkdocs polish. A release-candidate period invites feedback before the SemVer
-commitment locks in.
+(FastAPI + Alembic, Litestar, plain script), performance benchmarks, a new
+VitePress docs site, and a ~4x faster per-row `create_batch()` via a
+batched-flush fast lane. A release-candidate period invited feedback before
+the SemVer commitment locked in.
+
+## Post-1.0
+
+From 1.0.0 onward the public API follows Semantic Versioning: breaking
+changes only land in a new major version. Minor releases carry additive
+features and fixes.
 
 ---
 

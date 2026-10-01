@@ -45,15 +45,20 @@ hand-rolled script. Here's the same job, three ways.
 class UserFactory(AutoFactory[User]):
     model = User
 
+
 class UserSeeder(Seeder):
     environments = DEV_AND_TEST
+
     async def run(self, session):
         await UserFactory.create_batch(session, 1000, bulk=True)
+
 
 class ProfileSeeder(Seeder):
     depends_on = [UserSeeder]
     environments = DEV_AND_TEST
+
     async def run(self, session): ...
+
 
 runner = SeederRunner(session_factory, env="development")
 runner.register(UserSeeder, ProfileSeeder)
@@ -65,16 +70,20 @@ class UserFactory(SQLAlchemyModelFactory):
     class Meta:
         model = User
         sqlalchemy_session_persistence = "flush"
+
     name = factory.Faker("name")
     email = factory.Faker("email")
     # ...every column declared manually
+
 
 # factory_boy is sync — bridge to async yourself
 def seed_users(sync_session):
     UserFactory._meta.sqlalchemy_session = sync_session
     UserFactory.create_batch(1000)
 
+
 def seed_profiles(sync_session): ...
+
 
 # Ordering, environments, idempotency, parallel — DIY
 seed_users(session)
@@ -96,10 +105,10 @@ seed_profiles(session)
 | Parallel level execution | ✅ | ❌ | ❌ |
 | pytest fixtures + `@seed()` decorator | ✅ | ❌ | ❌ |
 | CLI (`seed run`, `fresh`, `graph`, …) | ✅ | ❌ | ❌ |
-| Per-row throughput (1 000 rows, SQLite) | 2 300 rows/s | **16 500 rows/s** | 8 200 rows/s |
-| Bulk throughput (1 000 rows, SQLite) | **17 400 rows/s** | — | 507 000 rows/s |
+| Per-row throughput (1 000 rows, SQLite) | 7 900 rows/s | **16 700 rows/s** | 8 200 rows/s |
+| Bulk throughput (1 000 rows, SQLite) | **90 000 rows/s** | — | 520 000 rows/s |
 
-Honest trade-off: factory_boy is **faster per-row** because its sync code path
-skips the `refresh` round-trip Seedling does after each insert. If you don't
-need `@post_generation` hooks on the live instance, use `bulk=True` and you
-match factory_boy. See the [benchmarks](/benchmarks) page for full numbers.
+Honest trade-off: factory_boy is still **~2× faster per-row** because its
+sync code path has no event-loop overhead. Seedling's per-row path now matches
+raw `session.add()` + flush, and `bulk=True` is ~5× faster than factory_boy.
+See the [benchmarks](/benchmarks) page for full numbers.

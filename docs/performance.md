@@ -71,6 +71,7 @@ class UserFactory(Factory[User]):
     async def create_profile(instance, session):
         await ProfileFactory.create(session, user_id=instance.id)
 
+
 # @post_generation declared → slow path, fires per row
 users = await UserFactory.create_batch(session, 50)
 ```

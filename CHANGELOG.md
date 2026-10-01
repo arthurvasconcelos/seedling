@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-06-16
+## [1.0.0] - 2026-10-01
+
+First stable release. From this version on the public API follows Semantic
+Versioning: breaking changes only land in a new major version.
 
 ### Changed
 
@@ -45,6 +48,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`testcontainers[postgres]` and `asyncpg`** added to the `dev` dependency
   group.
+
+- **SQLAlchemy 2.1 support** — the test suite passes against SQLAlchemy 2.1.x
+  with deprecation warnings treated as errors. The dependency range stays
+  `sqlalchemy[asyncio]>=2.0`.
+
+### Fixed
+
+- **`Seeder.on_error` is now actually called.** The runner invokes it with the
+  seeder's session and the exception whenever `before_run()`, `run()` or
+  `after_run()` raises, then re-raises. Previously the hook was documented but
+  never wired in.
+- **`fresh()` now goes through the same dispatch as `run()`:** runner-level
+  `before_run` / `after_run` / `on_run_error` hooks fire and `transactional=True`
+  is honoured for the re-seed phase.
+- **A failing seeder no longer leaves siblings running detached.** The runner
+  waits for every seeder in the current level to finish, so each one records a
+  final `seedling_state` row, then re-raises the first error.
+- **`seedling_transactional_session` survives `session.commit()`.** The fixture
+  binds the session to a connection-level transaction with
+  `join_transaction_mode="create_savepoint"`, so a `commit()` inside the test
+  commits a SAVEPOINT and everything is still rolled back afterwards. It now
+  requires an `async_sessionmaker` bound to an engine.
+- **`AutoFactory` generates valid values for `Enum` columns** by cycling through
+  the declared members instead of emitting `value-N` strings that fail on read
+  (SQLite) or insert (PostgreSQL).
+- **The CLI no longer resets `state_tracking` to `True`** when `[tool.seedling]`
+  has no `state_tracking` key; a value set in `create_runner()` is kept.
+- **`truncate_tables()` and `reset_sequences()` quote identifiers and honour
+  `__table_args__["schema"]`.** Reserved or mixed-case table names such as
+  `"order"` work, and PostgreSQL sequences are located via
+  `pg_get_serial_sequence()` instead of a guessed `<table>_<attr>_seq` name.
+- **`upsert()` raises `NotImplementedError`** on dialects other than
+  PostgreSQL, MySQL/MariaDB and SQLite instead of silently emitting SQLite
+  syntax.
+
+### Changed (API surface)
+
+- **`Seeder.depends_on`, `models` and `tags` default to immutable empty values**
+  (`()`, `()`, `frozenset()`) and are typed as `Sequence` / `Set`. Lists and sets
+  on subclasses keep working; mutating the base-class default is no longer
+  possible.
+- **`Seeder.idempotent`** is documented as an informational flag shown by
+  `seed list --verbose`. It never influenced `upsert()`.
+- **`topological_sort`, `topological_levels` and `resolve_with_deps`** are no
+  longer exported from the `seedling` package. Import them from
+  `seedling.resolver` if you need them.
+- **Packaging:** `license = "MIT"` with `license-files` (PEP 639), the license
+  classifier is dropped, and Python 3.14 is added to the classifiers and CI
+  matrix.
+
+### Removed
+
+- **RC banner** from the README and docs site.
+- **`black` and `isort`** dev dependencies and their `pyproject.toml` sections —
+  `ruff` has been the only formatter and import sorter since 0.2.
+
+### Internal
+
+- Dev dependencies refreshed (`mypy` 2.x, `ruff` 0.16, `pytest` 9.1).
+- Docs site moved to VitePress 2 with `markdown-it` / `linkify-it` overrides,
+  clearing all open npm security advisories.
+- PyPI classifier changed to `Development Status :: 5 - Production/Stable`.
 
 ## [1.0.0rc1] - 2026-05-02
 

@@ -9,8 +9,8 @@
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "vitepress": "^1.6.3",
-    "vitepress-plugin-group-icons": "^1.7.5",
-    "vitepress-plugin-llms": "^1.13.0"
+    "vitepress": "2.0.0-alpha.20",
+    "vitepress-plugin-group-icons": "^1.7.6",
+    "vitepress-plugin-llms": "^1.14.0"
   }
 }
