@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779877472640,
+  "lastUpdate": 1790850884724,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -835,6 +835,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.2559,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "982a2344870661ed28708992383c34ddcd07f95d",
+          "message": "chore: release 1.0.0\n\n- bump version to 1.0.0, Production/Stable classifier, PEP 639 license\n- add Python 3.14 to classifiers and CI matrix\n- refresh Python lockfile (SQLAlchemy 2.1, mypy 2, ruff 0.16, pytest 9.1)\n- drop unused black and isort dev dependencies\n- docs: VitePress 2, npm overrides clearing all security advisories\n- docs: remove RC banner, stable badge, roadmap marks 1.0 shipped,\n  homepage benchmark table matches benchmarks page\n- drop resolver internals from the public seedling namespace\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-10-01T12:34:25+02:00",
+          "tree_id": "4aa8ca7f10741158f25bc8a276b50221e52446c4",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/982a2344870661ed28708992383c34ddcd07f95d"
+        },
+        "date": 1790850884117,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.2634,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1154,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.168,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.1609,
             "unit": "seconds"
           }
         ]
