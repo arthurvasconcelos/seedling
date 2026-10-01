@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790850884724,
+  "lastUpdate": 1790851154768,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -879,6 +879,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.1609,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "d12d323309473aa650a9773083a405b405a49d3d",
+          "message": "ci: grant reusable CI workflow the permissions the benchmark job needs\n\nThe benchmark job requests contents: write, so the publish workflow's\ncall to ci.yml failed at startup on the v1.0.0 tag.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-10-01T12:38:56+02:00",
+          "tree_id": "03ca8ed0d5955c4816e2f083468411a1f7231da4",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/d12d323309473aa650a9773083a405b405a49d3d"
+        },
+        "date": 1790851152981,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.1612,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.078,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.0986,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.0947,
             "unit": "seconds"
           }
         ]
