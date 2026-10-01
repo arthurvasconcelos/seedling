@@ -4,7 +4,7 @@ import asyncio
 import importlib
 import pkgutil
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine, Sequence
 from datetime import UTC, datetime
 from typing import Any, cast
 
@@ -51,6 +51,28 @@ def _all_subclasses(cls: type) -> set[type]:
         result.add(sub)
         result.update(_all_subclasses(sub))
     return result
+
+
+async def _run_with_hooks(instance: Seeder, session: AsyncSession) -> None:
+    try:
+        await instance.before_run(session)
+        await instance.run(session)
+        await instance.after_run(session)
+    except Exception as exc:
+        await instance.on_error(session, exc)
+        raise
+
+
+async def _gather_all(coros: list[Coroutine[Any, Any, None]]) -> None:
+    """Run all coroutines to completion, then re-raise the first failure.
+
+    Unlike bare ``asyncio.gather``, a failing seeder does not leave its
+    siblings running detached after the caller has already seen the error.
+    """
+    results = await asyncio.gather(*coros, return_exceptions=True)
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
 
 
 class SeederRunner:
@@ -170,13 +192,11 @@ class SeederRunner:
         )
 
         started_at = datetime.now(UTC)
+        instance = seeder_cls()
         try:
             if shared_session is not None:
                 # Transactional mode: state tracking skipped (shared txn could roll back).
-                instance = seeder_cls()
-                await instance.before_run(shared_session)
-                await instance.run(shared_session)
-                await instance.after_run(shared_session)
+                await _run_with_hooks(instance, shared_session)
             else:
                 if self._state_tracking:
                     async with self._session_factory() as state_session:
@@ -189,10 +209,7 @@ class SeederRunner:
                         )
 
                 async with self._session_factory() as session:
-                    instance = seeder_cls()
-                    await instance.before_run(session)
-                    await instance.run(session)
-                    await instance.after_run(session)
+                    await _run_with_hooks(instance, session)
 
         except Exception as exc:
             finished_at = datetime.now(UTC)
@@ -265,27 +282,39 @@ class SeederRunner:
         levels = self._list_levels(*seeder_classes, tags=tags)
         log.info("run.start", seeder_count=sum(len(level) for level in levels))
 
+        await self._execute(
+            levels,
+            log,
+            run_id,
+            on_seeder_start,
+            on_seeder_finish,
+            new_only=new_only and not force,
+        )
+        log.info("run.finish")
+
+    async def _execute(
+        self,
+        levels: list[list[type[Seeder]]],
+        log: structlog.types.FilteringBoundLogger,
+        run_id: str,
+        on_start: Callable[[str], None] | None,
+        on_finish: Callable[[str], None] | None,
+        *,
+        new_only: bool = False,
+    ) -> None:
         await self.before_run(run_id, self._env)
         try:
             if self._transactional:
-                await self._run_transactional(
-                    levels, log, run_id, on_seeder_start, on_seeder_finish
-                )
+                await self._run_transactional(levels, log, run_id, on_start, on_finish)
             else:
                 await self._run_normal(
-                    levels,
-                    log,
-                    run_id,
-                    on_seeder_start,
-                    on_seeder_finish,
-                    new_only=new_only and not force,
+                    levels, log, run_id, on_start, on_finish, new_only=new_only
                 )
         except Exception as exc:
             await self.on_run_error(run_id, self._env, exc)
             raise
 
         await self.after_run(run_id, self._env)
-        log.info("run.finish")
 
     async def _run_normal(
         self,
@@ -318,7 +347,7 @@ class SeederRunner:
         for level in levels:
             active = [cls for cls in level if cls.__name__ not in skip_set]
             if active:
-                await asyncio.gather(*[_bounded(cls) for cls in active])
+                await _gather_all([_bounded(cls) for cls in active])
 
     async def _run_transactional(
         self,
@@ -368,9 +397,9 @@ class SeederRunner:
                 await delete_states_for_seeders(state_session, all_names, self._env)
 
         for level in reversed(levels):
-            await asyncio.gather(*[self._truncate_one(cls) for cls in level])
+            await _gather_all([self._truncate_one(cls) for cls in level])
 
-        await self._run_normal(levels, log, run_id, on_seeder_start, on_seeder_finish)
+        await self._execute(levels, log, run_id, on_seeder_start, on_seeder_finish)
         log.info("fresh.finish")
 
     async def export(
@@ -391,7 +420,9 @@ class SeederRunner:
             for model in ordered_models:
                 mapper = sa_inspect(model)
                 col_keys = [c.key for c in mapper.mapper.column_attrs]
-                rows = (await session.execute(select(model))).scalars().all()
+                rows: Sequence[Any] = (
+                    (await session.execute(select(model))).scalars().all()
+                )
                 result[model.__tablename__] = [
                     {key: getattr(row, key) for key in col_keys} for row in rows
                 ]

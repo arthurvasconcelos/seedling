@@ -758,6 +758,9 @@ def _smart_heuristic(col_name: str) -> LazyAttribute | None:
 def _default_for_col_type(col: Any) -> Any:
     """Return a descriptor default for a column's SQLAlchemy type, or None to skip."""
     t = col.type
+    if isinstance(t, sa_types.Enum):
+        values = list(t.enum_class) if t.enum_class is not None else list(t.enums)
+        return Iterator(values) if values else None
     if isinstance(t, sa_types.String | sa_types.Text):
         return Sequence(lambda n: f"value-{n}")
     if isinstance(t, sa_types.Integer | sa_types.BigInteger | sa_types.SmallInteger):

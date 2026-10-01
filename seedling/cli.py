@@ -87,11 +87,10 @@ def _get_runner(env: str) -> SeederRunner:
         _err(f"Could not import {module_path!r}: {exc}")
         raise typer.Exit(1) from exc
 
-    state_tracking: bool = config.get("state_tracking", True)
     create_runner: Callable[[str], SeederRunner] = getattr(module, func_name)
     runner = create_runner(env)
-    # Apply config-level state_tracking override if not already set by the factory.
-    runner._state_tracking = state_tracking
+    if "state_tracking" in config:
+        runner._state_tracking = bool(config["state_tracking"])
     return runner
 
 

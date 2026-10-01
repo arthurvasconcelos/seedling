@@ -348,14 +348,11 @@ async def test_seeder_on_error_hook_called_on_failure(engine, session_factory):
     runner = SeederRunner(session_factory, env=DEV, state_tracking=False)
     runner.register(FailingSeeder)
 
-    # The runner re-raises, so on_error is not called by the runner directly.
-    # on_error is a user extension point on the Seeder — it's not wired into the
-    # runner's exception path (that would require the runner to catch and re-raise).
-    # Verify that the hook is declared with correct signature.
-    instance = FailingSeeder()
-    exc = ValueError("test")
-    async with session_factory() as s:
-        await instance.on_error(s, exc)  # should not raise
+    with pytest.raises(ValueError, match="boom"):
+        await runner.run()
+
+    assert len(error_received) == 1
+    assert str(error_received[0]) == "boom"
 
 
 # ── runner-level lifecycle hooks ─────────────────────────────────────────────

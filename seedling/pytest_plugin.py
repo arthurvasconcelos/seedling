@@ -30,6 +30,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from seedling.environments import TEST
 from seedling.runner import SeederRunner
@@ -67,7 +68,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture
-def seedling_session_factory():
+def seedling_session_factory() -> async_sessionmaker[AsyncSession] | None:
     """Override this fixture in conftest.py to supply an async_sessionmaker.
 
     Return ``None`` (the default) means seedling fixtures are unconfigured —
@@ -83,7 +84,10 @@ def seedling_env() -> str:
 
 
 @pytest.fixture
-def seedling_runner(seedling_session_factory, seedling_env: str) -> SeederRunner:
+def seedling_runner(
+    seedling_session_factory: async_sessionmaker[AsyncSession] | None,
+    seedling_env: str,
+) -> SeederRunner:
     """A SeederRunner bound to the test session factory.
 
     Requires ``seedling_session_factory`` to be overridden in conftest.py.
@@ -98,8 +102,8 @@ def seedling_runner(seedling_session_factory, seedling_env: str) -> SeederRunner
 
 @pytest.fixture
 async def seedling_transactional_session(
-    seedling_session_factory,
-) -> AsyncGenerator:
+    seedling_session_factory: async_sessionmaker[AsyncSession] | None,
+) -> AsyncGenerator[AsyncSession, None]:
     """Async session wrapped in a SAVEPOINT that rolls back after the test.
 
     Use this fixture when you want to seed data and assert against it, but
@@ -118,13 +122,30 @@ async def seedling_transactional_session(
             "Override the 'seedling_session_factory' fixture in your conftest.py "
             "to provide an async_sessionmaker for seedling."
         )
-    async with seedling_session_factory() as session:
-        async with session.begin():
-            nested = await session.begin_nested()
+    engine = getattr(seedling_session_factory, "kw", {}).get("bind")
+    if engine is None:
+        raise pytest.UsageError(
+            "seedling_transactional_session needs an async_sessionmaker bound to an "
+            "engine (async_sessionmaker(engine, ...))."
+        )
+    async with engine.connect() as conn:
+        outer = await conn.begin()
+        if conn.dialect.name == "sqlite":
+            # pysqlite/aiosqlite do not emit BEGIN until the first DML, which
+            # makes a later RELEASE SAVEPOINT commit the whole transaction.
+            # Start it explicitly; ignore the error if the engine already
+            # applies SQLAlchemy's documented pysqlite transaction workaround.
             try:
+                await conn.exec_driver_sql("BEGIN")
+            except Exception:  # pragma: no cover - only with custom engine events
+                pass
+        try:
+            async with seedling_session_factory(
+                bind=conn, join_transaction_mode="create_savepoint"
+            ) as session:
                 yield session
-            finally:
-                await nested.rollback()
+        finally:
+            await outer.rollback()
 
 
 # ── Internal fixtures ────────────────────────────────────────────────────────
@@ -132,7 +153,8 @@ async def seedling_transactional_session(
 
 @pytest.fixture
 def _seedling_runner_for_marker(
-    seedling_session_factory, seedling_env: str
+    seedling_session_factory: async_sessionmaker[AsyncSession] | None,
+    seedling_env: str,
 ) -> SeederRunner | None:
     """Companion to seedling_runner: returns None instead of raising when unconfigured.
 

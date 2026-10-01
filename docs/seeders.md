@@ -10,6 +10,7 @@ from sqlalchemy import text
 from seedling import Seeder, DEV_AND_TEST
 from myapp.models import User
 
+
 class UserSeeder(Seeder):
     environments = DEV_AND_TEST
     models = [User]
@@ -26,11 +27,11 @@ class UserSeeder(Seeder):
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `depends_on` | `list[type[Seeder]]` | `[]` | Seeders that must run before this one |
+| `depends_on` | `Sequence[type[Seeder]]` | `()` | Seeders that must run before this one |
 | `environments` | `set[str]` | `DEV_AND_TEST` | Environments in which this seeder runs |
-| `idempotent` | `bool` | `True` | Whether `upsert()` uses `on_conflict_do_nothing` |
-| `models` | `list[Any]` | `[]` | ORM model classes seeded here (used by `seed export`) |
-| `tags` | `set[str]` | `set()` | Arbitrary labels for tag-based filtering |
+| `idempotent` | `bool` | `True` | Informational: safe to re-run without `fresh`. Shown by `seed list --verbose`; the runner does not act on it |
+| `models` | `Sequence[type]` | `()` | ORM model classes seeded here (used by `seed export`) |
+| `tags` | `Set[str]` | `frozenset()` | Arbitrary labels for tag-based filtering |
 
 ## Dependency ordering
 
@@ -40,8 +41,7 @@ Use `depends_on` to declare that one seeder requires another to have run first:
 class PostSeeder(Seeder):
     depends_on = [UserSeeder]
 
-    async def run(self, session: AsyncSession) -> None:
-        ...
+    async def run(self, session: AsyncSession) -> None: ...
 ```
 
 The runner resolves a topological sort and executes independent seeders concurrently at each level.
@@ -69,6 +69,7 @@ Tag seeders with arbitrary labels for fine-grained filtering:
 class UserSeeder(Seeder):
     environments = DEV_AND_TEST
     tags = {"demo", "smoke"}
+
 
 class HeavySeeder(Seeder):
     environments = DEV_AND_TEST
@@ -105,15 +106,14 @@ class UserSeeder(Seeder):
         # Called immediately before run()
         pass
 
-    async def run(self, session: AsyncSession) -> None:
-        ...
+    async def run(self, session: AsyncSession) -> None: ...
 
     async def after_run(self, session: AsyncSession) -> None:
         # Called after a successful run()
         pass
 
     async def on_error(self, session: AsyncSession, exc: BaseException) -> None:
-        # Called if run() raises — default is a no-op
+        # Called if before_run(), run() or after_run() raises — default is a no-op
         pass
 ```
 

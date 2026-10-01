@@ -39,10 +39,12 @@ async def upsert(
         from sqlalchemy.dialects.mysql import insert as mysql_insert
 
         stmt = mysql_insert(model_class).prefix_with("IGNORE").values(**values)
-    else:
+    elif dialect == "sqlite":
         from sqlalchemy import insert
 
         stmt = insert(model_class).prefix_with("OR IGNORE").values(**values)
+    else:
+        raise NotImplementedError(f"upsert() does not support dialect {dialect!r}")
 
     await session.execute(stmt)
 
@@ -59,19 +61,24 @@ async def truncate_tables(
     """
     conn = await session.connection()
     dialect = conn.dialect.name
+    names = [_qualified_table_name(conn.dialect, m) for m in models]
 
     if dialect == "postgresql":
-        names = ", ".join(m.__tablename__ for m in models)
         suffix = " CASCADE" if cascade else ""
-        await session.execute(text(f"TRUNCATE {names}{suffix}"))
+        await session.execute(text(f"TRUNCATE {', '.join(names)}{suffix}"))
     elif dialect in ("mysql", "mariadb"):
         await session.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
-        for model in models:
-            await session.execute(text(f"TRUNCATE TABLE {model.__tablename__}"))
+        for name in names:
+            await session.execute(text(f"TRUNCATE TABLE {name}"))
         await session.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
     else:
-        for model in models:
-            await session.execute(text(f"DELETE FROM {model.__tablename__}"))
+        for name in names:
+            await session.execute(text(f"DELETE FROM {name}"))
+
+
+def _qualified_table_name(dialect: Any, model: type[Any]) -> str:
+    table = sa_inspect(model).local_table
+    return str(dialect.identifier_preparer.format_table(table))
 
 
 async def reset_sequences(session: AsyncSession, *models: type[Any]) -> None:
@@ -86,14 +93,17 @@ async def reset_sequences(session: AsyncSession, *models: type[Any]) -> None:
 
     for model in models:
         mapper = sa_inspect(model)
-        table_name: str = model.__tablename__
-        for col in mapper.mapper.column_attrs:
-            col_obj = mapper.mapper.columns[col.key]
+        table_name = _qualified_table_name(conn.dialect, model)
+        for col_obj in mapper.local_table.columns:
             if col_obj.autoincrement is True or (
                 col_obj.primary_key and col_obj.autoincrement != False  # noqa: E712
             ):
-                seq_name = f"{table_name}_{col.key}_seq"
-                await session.execute(text(f"SELECT setval('{seq_name}', 1, false)"))
+                await session.execute(
+                    text(
+                        "SELECT setval(pg_get_serial_sequence(:table, :column), 1, false)"
+                    ),
+                    {"table": table_name, "column": col_obj.name},
+                )
 
 
 @asynccontextmanager
