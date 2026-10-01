@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790851154768,
+  "lastUpdate": 1790851513182,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -923,6 +923,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.0947,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "17801cfaac01974e6a14861df482b6babc4d6578",
+          "message": "ci: grant reusable CI workflow the permissions the benchmark job needs\n\nThe benchmark job requests contents: write, so the publish workflow's\ncall to ci.yml failed at startup on the v1.0.0 tag.",
+          "timestamp": "2026-10-01T12:43:39+02:00",
+          "tree_id": "03ca8ed0d5955c4816e2f083468411a1f7231da4",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/17801cfaac01974e6a14861df482b6babc4d6578"
+        },
+        "date": 1790851512497,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.1657,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.0773,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.0998,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.0941,
             "unit": "seconds"
           }
         ]
