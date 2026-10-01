@@ -11,6 +11,8 @@ env:
 jobs:
   ci:
     uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: write
 
   publish:
     needs: ci
