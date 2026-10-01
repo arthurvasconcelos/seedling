@@ -1,0 +1,31 @@
+# sqlalchemy-seedling
+
+> Async-native seeder & factory library
+
+Built for SQLAlchemy 2.0+ async workflows — seed databases, generate fixtures, and run factories without the boilerplate.
+
+## Table of Contents
+
+### Guide
+
+- [Getting Started](/seedling/v1.0.0/getting-started.md): Install sqlalchemy-seedling and seed your first SQLAlchemy database in five minutes.
+- [Seeders](/seedling/v1.0.0/seeders.md)
+- [Factories](/seedling/v1.0.0/factories.md): Define factories and AutoFactories to generate SQLAlchemy model instances for tests and seeding, with traits, descriptors, and post-generation hooks.
+- [State Tracking](/seedling/v1.0.0/state-tracking.md)
+- [Runner](/seedling/v1.0.0/runner.md)
+
+### Reference
+
+- [CLI Reference](/seedling/v1.0.0/cli.md): Full CLI reference for the sqlalchemy-seedling seed command — run, fresh, list, status, validate, graph, export, restore, init, and make subcommands.
+- [Configuration](/seedling/v1.0.0/configuration.md): Configure sqlalchemy-seedling via pyproject.toml — runner settings, state tracking, and pytest plugin fixtures.
+
+### Resources
+
+- [Performance guide](/seedling/v1.0.0/performance.md)
+- [Migrate from factory\_boy](/seedling/v1.0.0/migration.md)
+- [Cookbook](/seedling/v1.0.0/cookbook.md)
+- [Benchmarks](/seedling/v1.0.0/benchmarks.md)
+
+### Other
+
+- [For LLMs](/seedling/v1.0.0/llms.md)

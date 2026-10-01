@@ -46,6 +46,7 @@ runner = "myapp.seeders:create_runner"
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from seedling import SeederRunner
 
+
 def create_runner(env: str) -> SeederRunner:
     engine = create_async_engine("postgresql+asyncpg://user:pass@localhost/mydb")
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -60,6 +61,7 @@ def create_runner(env: str) -> SeederRunner:
 from seedling import Seeder, DEV_AND_TEST
 from sqlalchemy.ext.asyncio import AsyncSession
 from myapp.models import User
+
 
 class UserSeeder(Seeder):
     environments = DEV_AND_TEST

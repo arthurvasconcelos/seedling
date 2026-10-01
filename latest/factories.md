@@ -8,8 +8,8 @@ description: >-
 # Factories
 
 `Factory[T]` generates ORM model instances with realistic data for use in seeders and
-tests.  Phase 0.4 added `AutoFactory`, declarative `Trait` classes, `@post_generation`
-hooks, `RelatedFactory`, and a full set of field descriptors.
+tests. Alongside the base class you get `AutoFactory`, declarative `Trait` classes,
+`@post_generation` hooks, `RelatedFactory`, and a full set of field descriptors.
 
 ***
 
@@ -22,14 +22,16 @@ declarations at class level become the default values for each instance.
 from seedling import Factory, Faker, LazyAttribute, Sequence, SubFactory
 from myapp.models import User, Post
 
+
 class UserFactory(Factory[User]):
     model = User
-    name  = Faker("name")
+    name = Faker("name")
     email = Faker("email")
+
 
 class PostFactory(Factory[Post]):
     model = Post
-    title  = Faker("sentence")
+    title = Faker("sentence")
     author = SubFactory(UserFactory)
 ```
 
@@ -41,6 +43,7 @@ automatically — no field declarations required.
 ```python
 from seedling import AutoFactory
 from myapp.models import User
+
 
 class UserFactory(AutoFactory[User]):
     model = User
@@ -113,8 +116,8 @@ Explicitly declared fields always win over auto-generated ones:
 ```python
 class UserFactory(AutoFactory[User]):
     model = User
-    email = "fixed@example.com"          # overrides smart default
-    bio   = Skip                          # suppresses the auto-generated default
+    email = "fixed@example.com"  # overrides smart default
+    bio = Skip  # suppresses the auto-generated default
 ```
 
 ***
@@ -126,9 +129,9 @@ class UserFactory(AutoFactory[User]):
 Calls a `faker` provider by name each build:
 
 ```python
-email   = Faker("email")
-name    = Faker("name", locale="fr_FR")
-code    = Faker("numerify", text="###-##")
+email = Faker("email")
+name = Faker("name", locale="fr_FR")
+code = Faker("numerify", text="###-##")
 ```
 
 ### `LazyAttribute(func)`
@@ -145,7 +148,7 @@ References a sibling field by name.  Dot-notation traverses attributes:
 
 ```python
 username = SelfAttribute("email")
-city     = SelfAttribute("address.city", default="Unknown")
+city = SelfAttribute("address.city", default="Unknown")
 ```
 
 ### `Sequence(func)`
@@ -153,7 +156,7 @@ city     = SelfAttribute("address.city", default="Unknown")
 Auto-incrementing counter shared across all builds of the factory:
 
 ```python
-code = Sequence(lambda n: f"ID-{n:04d}")   # ID-0000, ID-0001, ...
+code = Sequence(lambda n: f"ID-{n:04d}")  # ID-0000, ID-0001, ...
 ```
 
 ### `Iterator(values)`
@@ -180,7 +183,7 @@ Omits a field entirely — the model's `__init__` never receives it:
 ```python
 class UserFactory(AutoFactory[User]):
     model = User
-    internal_flag = Skip   # suppress the auto-generated default
+    internal_flag = Skip  # suppress the auto-generated default
 ```
 
 ***
@@ -192,25 +195,26 @@ Declare traits as inner classes that subclass `Trait`.  Apply them via bool kwar
 ```python
 from seedling import Factory, Trait
 
+
 class UserFactory(Factory[User]):
-    model     = User
-    name      = Faker("name")
-    email     = Faker("email")
+    model = User
+    name = Faker("name")
+    email = Faker("email")
     is_active = True
-    is_staff  = False
+    is_staff = False
 
     class inactive(Trait):
         is_active = False
 
     class admin(Trait):
-        is_staff  = True
+        is_staff = True
         is_active = True
 ```
 
 ```python
 user = UserFactory.build(inactive=True)
 user = UserFactory.build(admin=True)
-user = UserFactory.build(admin=True, inactive=True)   # stackable — later wins
+user = UserFactory.build(admin=True, inactive=True)  # stackable — later wins
 user = UserFactory.build(admin=True, is_staff=False)  # explicit kwarg beats trait
 ```
 
@@ -230,6 +234,7 @@ has been flushed and refreshed in `create()`.  Silently skipped in `build()`.
 
 ```python
 from seedling import post_generation
+
 
 class UserFactory(Factory[User]):
     model = User
@@ -256,6 +261,7 @@ Creates one related instance.  Callable kwargs receive the parent instance:
 
 ```python
 from seedling import RelatedFactory
+
 
 class AuthorFactory(Factory[Author]):
     model = Author
@@ -286,13 +292,13 @@ Both are silently skipped in `build()`.
 
 ```python
 # In-memory, no DB
-user  = UserFactory.build()
-user  = UserFactory.build(name="Alice", admin=True)
+user = UserFactory.build()
+user = UserFactory.build(name="Alice", admin=True)
 users = UserFactory.build_batch(5)
 
 # Dict (no ORM instance)
-data  = UserFactory.build_dict()
-data  = UserFactory.build_dict(name="Alice")
+data = UserFactory.build_dict()
+data = UserFactory.build_dict(name="Alice")
 ```
 
 `build()` and `build_dict()` skip all DB-only descriptors (`SubFactory`,
@@ -328,7 +334,7 @@ Look up a factory by model class:
 ```python
 from seedling import get_factory
 
-factory_cls = get_factory(User)   # UserFactory, or None
+factory_cls = get_factory(User)  # UserFactory, or None
 ```
 
 `AutoFactory` uses the registry internally for FK resolution.
@@ -344,7 +350,7 @@ Resets the `Sequence` counter and all `Iterator` fields in the factory's MRO:
 ```python
 def setup_method(self):
     UserFactory.reset_sequence()
-    UserFactory.reset_sequence(100)   # start at 100
+    UserFactory.reset_sequence(100)  # start at 100
 ```
 
 ### `seed(n)`
@@ -367,12 +373,13 @@ declarative inner `Trait` classes.
 
 ```python
 class UserFactory(Factory[User]):
-    model     = User
+    model = User
     is_active = True
-    is_staff  = False
+    is_staff = False
+
 
 inactive = UserFactory.as_trait(is_active=False)
-admin    = UserFactory.as_trait(is_staff=True)
+admin = UserFactory.as_trait(is_staff=True)
 
 # Usage
 inactive.build()
@@ -383,15 +390,16 @@ admin.create(session)
 
 ```python
 class UserFactory(Factory[User]):
-    model     = User
+    model = User
     is_active = True
-    is_staff  = False
+    is_staff = False
 
     class inactive(Trait):
         is_active = False
 
     class admin(Trait):
         is_staff = True
+
 
 # Usage
 UserFactory.build(inactive=True)

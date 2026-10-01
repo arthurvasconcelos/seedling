@@ -117,7 +117,7 @@ Cap how many seeders run concurrently within a single dependency level:
 seed run --max-parallel 2
 ```
 
-Without this flag, all seeders in the same level run in parallel (the 0.2 default).
+Without this flag, all seeders in the same level run in parallel (the default).
 
 ## Transactional mode
 

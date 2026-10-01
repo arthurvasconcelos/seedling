@@ -21,6 +21,7 @@ Built for SQLAlchemy 2.0+ async workflows — seed databases, generate fixtures,
 
 ### Resources
 
+- [Performance guide](/seedling/latest/performance.md)
 - [Migrate from factory\_boy](/seedling/latest/migration.md)
 - [Cookbook](/seedling/latest/cookbook.md)
 - [Benchmarks](/seedling/latest/benchmarks.md)

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Database body -->
+  <rect x="3" y="11" width="26" height="19" fill="#555"/>
+  <!-- Bottom rounded cap -->
+  <ellipse cx="16" cy="30" rx="13" ry="2.5" fill="#484848"/>
+  <!-- Top ellipse (lit surface) -->
+  <ellipse cx="16" cy="11" rx="13" ry="3" fill="#6a6a6a"/>
+  <!-- Disc separators -->
+  <path d="M3,18.5 Q16,21.5 29,18.5" stroke="#3a3a3a" stroke-width="1.5"/>
+  <path d="M3,25.5 Q16,28.5 29,25.5" stroke="#3a3a3a" stroke-width="1.5"/>
+
+  <!-- Seedling: left leaf, right leaf, stem -->
+  <path d="M16,11 C13,6 7,3 6,6 C7,11 13,12 16,11Z" fill="#3CAE3C"/>
+  <path d="M16,11 C19,6 25,3 26,6 C25,11 19,12 16,11Z" fill="#3CAE3C"/>
+  <path d="M16,4 L16,11" stroke="#3CAE3C" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

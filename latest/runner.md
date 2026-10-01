@@ -46,11 +46,11 @@ runner.discover("myapp.seeders")
 ## Running seeders
 
 ```python
-await runner.run()                       # run all seeders for the current env
-await runner.run(PostSeeder)             # run PostSeeder + its dependencies
-await runner.run(new_only=True)          # skip seeders whose source hash matches latest success
-await runner.run(force=True)            # override new_only — always run all
-await runner.run(tags={"demo"})         # only run seeders tagged "demo"
+await runner.run()  # run all seeders for the current env
+await runner.run(PostSeeder)  # run PostSeeder + its dependencies
+await runner.run(new_only=True)  # skip seeders whose source hash matches latest success
+await runner.run(force=True)  # override new_only — always run all
+await runner.run(tags={"demo"})  # only run seeders tagged "demo"
 ```
 
 Seeders at the same dependency level run concurrently via `asyncio.gather`. Dependent seeders always run after their dependencies.
@@ -67,19 +67,19 @@ Seeders at the same dependency level run concurrently via `asyncio.gather`. Depe
 ## Fresh (truncate + reseed)
 
 ```python
-await runner.fresh()                     # truncate all then reseed
-await runner.fresh(PostSeeder)           # truncate + reseed PostSeeder and its deps
-await runner.fresh(tags={"demo"})        # only fresh seeders tagged "demo"
+await runner.fresh()  # truncate all then reseed
+await runner.fresh(PostSeeder)  # truncate + reseed PostSeeder and its deps
+await runner.fresh(tags={"demo"})  # only fresh seeders tagged "demo"
 ```
 
-Tables are truncated in reverse dependency order, then re-seeded in forward order. `seed fresh` also wipes `seedling_state` rows for affected seeders before truncating (clean-slate semantics).
+Tables are truncated in reverse dependency order, then re-seeded in forward order. `seed fresh` also wipes `seedling_state` rows for affected seeders before truncating (clean-slate semantics). The re-seed phase goes through the same path as `run()`: runner-level hooks fire and `transactional=True` is honoured. Truncation itself always runs in its own committed transactions.
 
 ## Listing seeders
 
 ```python
-ordered = runner.list_seeders()                        # all, env-filtered, sorted
-subset  = runner.list_seeders(PostSeeder)              # PostSeeder + dependencies
-tagged  = runner.list_seeders(tags={"smoke"})          # only tagged seeders
+ordered = runner.list_seeders()  # all, env-filtered, sorted
+subset = runner.list_seeders(PostSeeder)  # PostSeeder + dependencies
+tagged = runner.list_seeders(tags={"smoke"})  # only tagged seeders
 ```
 
 Returns a flat list — no execution happens.
@@ -95,6 +95,8 @@ await runner.run()
 
 **Note:** State tracking is skipped in transactional mode — if the transaction rolled back, any state rows would roll back too, making them unreliable. Use transactional mode for test isolation, not production audit.
 
+When a seeder fails, the runner waits for the other seeders in the same level to finish before re-raising, so every seeder records a final state and no work is left running detached.
+
 ## Parallel cap
 
 ```python
@@ -109,7 +111,7 @@ By default all seeders within a dependency level run in parallel. `max_parallel`
 data = await runner.export()
 # {"users": [{"id": 1, "email": "..."}, ...], "posts": [...]}
 
-total = await runner.restore(data)   # returns total rows inserted
+total = await runner.restore(data)  # returns total rows inserted
 ```
 
 Only models declared on `Seeder.models` are exported. The restore path uses bulk Core insert; table order must satisfy FK constraints (export order is safe to restore as-is).
@@ -117,7 +119,7 @@ Only models declared on `Seeder.models` are exported. The restore path uses bulk
 ## Lookup by name
 
 ```python
-cls = runner.get_by_name("UserSeeder")   # raises ValueError for unknown names
+cls = runner.get_by_name("UserSeeder")  # raises ValueError for unknown names
 ```
 
 ## Runner-level lifecycle hooks
@@ -146,10 +148,12 @@ The `seedling_runner` fixture is provided by the pytest plugin:
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+
 @pytest.fixture(scope="session")
 def seedling_session_factory():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     return async_sessionmaker(engine, expire_on_commit=False)
+
 
 # test_something.py
 async def test_with_users(seedling_runner):

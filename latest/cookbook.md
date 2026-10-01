@@ -21,6 +21,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from myapp.models import Company, Person
 
+
 class OrgChartSeeder(Seeder):
     environments = DEV_AND_TEST
     models = [Company, Person]
@@ -60,8 +61,10 @@ from sqlalchemy.orm import DeclarativeBase, mapped_column
 from sqlalchemy import String
 from seedling import Factory, Faker
 
+
 class Base(DeclarativeBase):
     pass
+
 
 class Employee(Base):
     __tablename__ = "employee"
@@ -70,9 +73,11 @@ class Employee(Base):
     type: str = mapped_column(String)
     __mapper_args__ = {"polymorphic_on": "type", "polymorphic_identity": "employee"}
 
+
 class Manager(Employee):
     reports_count: int = mapped_column(default=0)
     __mapper_args__ = {"polymorphic_identity": "manager"}
+
 
 class Engineer(Employee):
     stack: str = mapped_column(String, nullable=True)
@@ -81,12 +86,13 @@ class Engineer(Employee):
 
 class ManagerFactory(Factory[Manager]):
     model = Manager
-    name  = Faker("name")
+    name = Faker("name")
+
 
 class EngineerFactory(Factory[Engineer]):
-    model   = Engineer
-    name    = Faker("name")
-    stack   = "Python"
+    model = Engineer
+    name = Faker("name")
+    stack = "Python"
 ```
 
 Each factory targets the concrete subclass. SQLAlchemy fills in `type` automatically
@@ -109,22 +115,27 @@ Declare them explicitly:
 from seedling import Factory, Faker, LazyAttribute
 from myapp.models import Article
 
+
 class ArticleFactory(Factory[Article]):
-    model    = Article
-    title    = Faker("sentence", nb_words=6)
+    model = Article
+    title = Faker("sentence", nb_words=6)
 
     # JSONB column
-    metadata = LazyAttribute(lambda f: {
-        "tags":    ["python", "async"],
-        "source":  "import",
-        "version": 1,
-    })
+    metadata = LazyAttribute(
+        lambda f: {
+            "tags": ["python", "async"],
+            "source": "import",
+            "version": 1,
+        }
+    )
 
     # ARRAY column
-    keywords = LazyAttribute(lambda f: [
-        Faker("word").generate({}),
-        Faker("word").generate({}),
-    ])
+    keywords = LazyAttribute(
+        lambda f: [
+            Faker("word").generate({}),
+            Faker("word").generate({}),
+        ]
+    )
 ```
 
 For randomised JSONB content, use `faker` inside `LazyAttribute`:
@@ -132,11 +143,13 @@ For randomised JSONB content, use `faker` inside `LazyAttribute`:
 ```python
 from seedling import faker
 
-metadata = LazyAttribute(lambda f: {
-    "score":   faker.random_int(0, 100),
-    "tags":    faker.words(3),
-    "created": faker.iso8601(),
-})
+metadata = LazyAttribute(
+    lambda f: {
+        "score": faker.random_int(0, 100),
+        "tags": faker.words(3),
+        "created": faker.iso8601(),
+    }
+)
 ```
 
 ***
@@ -153,9 +166,10 @@ from myapp.models import Event
 
 _BASE_TIME = datetime(2026, 1, 1, tzinfo=UTC)
 
+
 class EventFactory(Factory[Event]):
-    model      = Event
-    name       = Sequence(lambda n: f"event-{n:04d}")
+    model = Event
+    name = Sequence(lambda n: f"event-{n:04d}")
     # Each event is 1 hour after the previous one
     occurred_at = Sequence(lambda n: _BASE_TIME + timedelta(hours=n))
 ```
@@ -166,9 +180,10 @@ For the last N days of data, compute from the current time:
 from datetime import UTC, datetime, timedelta
 from seedling import Factory, Sequence
 
+
 class MetricFactory(Factory[Metric]):
-    model      = Metric
-    value      = Sequence(lambda n: float(n % 100))
+    model = Metric
+    value = Sequence(lambda n: float(n % 100))
     recorded_at = Sequence(
         lambda n: datetime.now(UTC) - timedelta(days=30) + timedelta(hours=n)
     )
@@ -232,7 +247,7 @@ class BigTableSeeder(Seeder):
     models = [Event]
 
     CHUNK_SIZE = 10_000
-    TOTAL      = 1_000_000
+    TOTAL = 1_000_000
 
     async def run(self, session: AsyncSession) -> None:
         for _ in range(self.TOTAL // self.CHUNK_SIZE):
@@ -251,14 +266,18 @@ without `depends_on` — the runner will execute them in parallel:
 class UserSeeder(Seeder):
     environments = DEV_AND_TEST
     models = [User]
+
     async def run(self, session):
         await UserFactory.create_batch(session, 100_000, bulk=True)
+
 
 class ProductSeeder(Seeder):
     environments = DEV_AND_TEST
     models = [Product]
+
     async def run(self, session):
         await ProductFactory.create_batch(session, 500_000, bulk=True)
+
 
 # No depends_on — these run in parallel
 runner.register(UserSeeder, ProductSeeder)
@@ -273,6 +292,7 @@ Run seeders automatically after Alembic migrations by hooking into `env.py`:
 ```python [alembic/env.py]
 from alembic import context
 
+
 def run_migrations_online() -> None:
     # ... standard async alembic setup ...
     with connectable.connect() as connection:
@@ -284,6 +304,7 @@ def run_migrations_online() -> None:
     if context.get_x_argument(as_dictionary=True).get("seed"):
         import asyncio
         from myapp.seeders import create_runner
+
         asyncio.run(create_runner("test").run())
 ```
 
@@ -304,6 +325,7 @@ test, keeping the database clean without truncation:
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+
 @pytest.fixture(scope="session")
 def seedling_session_factory():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -312,6 +334,7 @@ def seedling_session_factory():
 
 # test_orders.py
 from seedling.pytest_plugin import seed
+
 
 @seed(UserSeeder, OrderSeeder)
 async def test_order_total(seedling_transactional_session):
