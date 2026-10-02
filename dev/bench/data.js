@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790851513182,
+  "lastUpdate": 1790944397752,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -967,6 +967,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.0941,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "8427f2b65790f8648feff55e6c757622d55751ad",
+          "message": "docs: remove the 1.0 RC banner from the docs site",
+          "timestamp": "2026-10-02T14:32:53+02:00",
+          "tree_id": "22d9bd532b94cffbe473cdd777fd685596375e27",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/8427f2b65790f8648feff55e6c757622d55751ad"
+        },
+        "date": 1790944396415,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.2599,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1138,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.1851,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.1512,
             "unit": "seconds"
           }
         ]
