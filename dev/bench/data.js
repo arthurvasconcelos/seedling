@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790944397752,
+  "lastUpdate": 1792605216186,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -1011,6 +1011,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.1512,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "distinct": true,
+          "id": "c89e863d048a2f6032b27684159ddeb2262bafb7",
+          "message": "docs: make the security policy best-effort and current",
+          "timestamp": "2026-10-21T19:52:36+02:00",
+          "tree_id": "86f6e3c90e234fa54dc618607d8974834ef31cea",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/c89e863d048a2f6032b27684159ddeb2262bafb7"
+        },
+        "date": 1792605215411,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.2079,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1005,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.1202,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.1161,
             "unit": "seconds"
           }
         ]
