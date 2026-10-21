@@ -2,23 +2,20 @@
 
 ## Supported Versions
 
-Only the latest released minor version receives security fixes.
+Only the latest released minor version receives security fixes, as a new
+patch release.
 
 | Version | Supported      |
 |---------|----------------|
-| 0.2.x   | ✓ current      |
-| 0.1.x   | ✗              |
-
-Once 1.0 ships this table will follow semver: the latest patch of each
-supported minor line will receive fixes.
+| 1.0.x   | ✓ current      |
+| < 1.0   | ✗              |
 
 ## Reporting a Vulnerability
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-If you discover a vulnerability, report it privately in one of two ways:
-
-**GitHub private vulnerability reporting** — use the
+If you discover a vulnerability, report it privately through **GitHub private
+vulnerability reporting**: use the
 [Report a vulnerability](../../security/advisories/new) button on the Security
 tab of this repository. This keeps the report private until a fix is released.
 
