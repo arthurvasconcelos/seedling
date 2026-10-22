@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792657238427,
+  "lastUpdate": 1792658286830,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -1099,6 +1099,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.0698,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "290d99636ca61fd11a4c6e9fceda7b0fcb6ee705",
+          "message": "chore(deps): bump the uv group across 1 directory with 2 updates (#7)\n\nBumps the uv group with 2 updates in the / directory: [certifi](https://github.com/certifi/python-certifi) and [virtualenv](https://github.com/pypa/virtualenv).\n\n\nUpdates `certifi` from 2026.7.22 to 2026.10.19\n- [Commits](https://github.com/certifi/python-certifi/compare/2026.07.22...2026.10.19)\n\nUpdates `virtualenv` from 21.14.2 to 21.14.9\n- [Release notes](https://github.com/pypa/virtualenv/releases)\n- [Changelog](https://github.com/pypa/virtualenv/blob/main/docs/changelog.rst)\n- [Commits](https://github.com/pypa/virtualenv/compare/21.14.2...21.14.9)\n\n---\nupdated-dependencies:\n- dependency-name: certifi\n  dependency-version: 2026.10.19\n  dependency-type: indirect\n  dependency-group: uv\n- dependency-name: virtualenv\n  dependency-version: 21.14.9\n  dependency-type: indirect\n  dependency-group: uv\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-22T10:37:50+02:00",
+          "tree_id": "95e58d90ed66d45b720d146faf2518bc348d9493",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/290d99636ca61fd11a4c6e9fceda7b0fcb6ee705"
+        },
+        "date": 1792658285520,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.2764,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.1138,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.1613,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.1504,
             "unit": "seconds"
           }
         ]
