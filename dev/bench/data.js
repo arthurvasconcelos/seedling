@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792605216186,
+  "lastUpdate": 1792657238427,
   "repoUrl": "https://github.com/arthurvasconcelos/seedling",
   "entries": {
     "Benchmark": [
@@ -1055,6 +1055,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "sequential 3 seeders",
             "value": 0.1161,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vasconcelos.arthur@gmail.com",
+            "name": "Arthur Vasconcelos",
+            "username": "arthurvasconcelos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a8c3b72815d4534eefc1a5d79e8bf6ef3d52f54f",
+          "message": "chore: untrack local .claude settings, fix open security alerts (#6)\n\n* chore: stop tracking local .claude settings\n\n* fix: patch vite and source-map-js advisories, scope CI token to read",
+          "timestamp": "2026-10-22T10:20:23+02:00",
+          "tree_id": "4c9b992be2532b33d8071f597399009deef2eee2",
+          "url": "https://github.com/arthurvasconcelos/seedling/commit/a8c3b72815d4534eefc1a5d79e8bf6ef3d52f54f"
+        },
+        "date": 1792657237116,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "create_batch per-row 1000 rows",
+            "value": 0.1512,
+            "unit": "seconds"
+          },
+          {
+            "name": "create_batch bulk 1000 rows",
+            "value": 0.0557,
+            "unit": "seconds"
+          },
+          {
+            "name": "parallel 3 seeders",
+            "value": 0.0714,
+            "unit": "seconds"
+          },
+          {
+            "name": "sequential 3 seeders",
+            "value": 0.0698,
             "unit": "seconds"
           }
         ]
